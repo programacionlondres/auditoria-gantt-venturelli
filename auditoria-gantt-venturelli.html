@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Auditoría Interna Gantt – Venturelli</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f0f2f5;color:#1a1a2e;font-size:14px}
+
+.header{background:linear-gradient(135deg,#1a2744,#0d1b38);color:white;padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:54px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(0,0,0,.4)}
+.hlogo{font-size:10px;font-weight:800;letter-spacing:2px;color:#e8821a;text-transform:uppercase}
+.htitle{font-size:14px;font-weight:600;color:#e8e8f0}
+.hright{display:flex;align-items:center;gap:10px}
+.role-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700}
+.rb-jt{background:#1a6b3a;color:#7fffb0}.rb-cal{background:#1a4b8a;color:#7bc8ff}.rb-gaby{background:#6b1a5a;color:#ffb3f0}
+.week-pill{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);color:#ccd;padding:3px 8px;border-radius:5px;font-size:11px}
+.logout-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#ddeeff;padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px}
+.logout-btn:hover{background:rgba(255,255,255,.18);color:white}
+
+.prog-wrap{background:#0d1b38;padding:6px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #1e3060}
+.prog-txt{font-size:11px;color:#8899bb;white-space:nowrap}
+.prog-track{flex:1;height:5px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,#1a9b5a,#22dd80);border-radius:3px;transition:width .4s}
+.prog-pct{font-size:12px;font-weight:700;color:#22dd80;min-width:34px;text-align:right}
+
+.screen{display:none}
+.screen.active{display:block}
+
+/* LOGIN */
+.login-wrap{min-height:calc(100vh - 54px);display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 30%,#1a2a50,#0a0f1f)}
+.login-card{background:#131c38;border:1px solid #243060;border-radius:14px;padding:36px 32px;width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.login-title{font-size:19px;font-weight:700;color:#e8e8f0;margin-bottom:3px}
+.login-sub{font-size:11px;color:#5566aa;margin-bottom:28px}
+.login-lbl{font-size:11px;color:#8899bb;margin-bottom:10px;text-transform:uppercase;letter-spacing:1px}
+.rbtn{width:100%;padding:12px 16px;margin-bottom:8px;border:2px solid;border-radius:9px;cursor:pointer;display:flex;align-items:center;gap:10px;text-align:left;transition:all .15s;background:rgba(255,255,255,.03)}
+.rbtn:hover{transform:translateX(3px)}
+.rbtn.jt{border-color:#1a7a45;color:#5effa0}.rbtn.jt:hover{background:rgba(26,122,69,.15)}
+.rbtn.cal{border-color:#1a5aaa;color:#70c0ff}.rbtn.cal:hover{background:rgba(26,90,170,.15)}
+.rbtn.gaby{border-color:#8a1a7a;color:#ffaaee}.rbtn.gaby:hover{background:rgba(138,26,122,.15)}
+.rbtn-icon{font-size:20px}
+.rbtn-name{font-size:13px;font-weight:700}
+.rbtn-desc{font-size:10px;opacity:.6;margin-top:1px}
+
+/* AUDIT */
+.audit-wrap{max-width:860px;margin:0 auto;padding:14px 12px}
+
+.chapter{background:white;border-radius:10px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
+.ch-hdr{display:flex;align-items:center;gap:10px;padding:13px 16px;cursor:pointer;background:#1a2744;color:white;user-select:none}
+.ch-hdr:hover{background:#1e2f54}
+.ch-arr{font-size:11px;transition:transform .22s;color:#8899bb;flex-shrink:0}
+.ch-arr.open{transform:rotate(90deg)}
+.ch-name{font-size:14px;font-weight:700;flex:1}
+.ch-stats{font-size:11px;color:#8899bb;white-space:nowrap}
+.ch-bar{width:70px;height:4px;background:rgba(255,255,255,.12);border-radius:2px;overflow:hidden;flex-shrink:0}
+.ch-bar-fill{height:100%;background:#22dd80;border-radius:2px;transition:width .3s}
+.ch-body{display:none}
+.ch-body.open{display:block}
+
+.group{border-top:2px solid #d8e0f0}
+.grp-hdr{display:flex;align-items:center;gap:8px;padding:9px 16px;cursor:pointer;background:#e4ecf8;user-select:none}
+.grp-hdr:hover{background:#d8e4f5}
+.grp-arr{font-size:10px;color:#4466aa;transition:transform .2s;flex-shrink:0}
+.grp-arr.open{transform:rotate(90deg)}
+.grp-name{font-size:12px;font-weight:700;color:#1a2744;flex:1;text-transform:uppercase;letter-spacing:.5px}
+.grp-stats{font-size:11px;color:#8899bb}
+.grp-bar{width:60px;height:3px;background:#c0ceea;border-radius:2px;overflow:hidden;flex-shrink:0}
+.grp-bar-fill{height:100%;background:#3388dd;border-radius:2px;transition:width .3s}
+.grp-body{display:none}
+.grp-body.open{display:block}
+
+.section{border-top:1px solid #eef0f8}
+.sec-hdr{display:flex;align-items:center;gap:8px;padding:8px 16px 8px 28px;cursor:pointer;background:#f6f8fd;user-select:none}
+.sec-hdr:hover{background:#eef1fa}
+.sec-arr{font-size:9px;color:#99aac0;transition:transform .18s;flex-shrink:0}
+.sec-arr.open{transform:rotate(90deg)}
+.sec-name{font-size:11px;font-weight:700;color:#2c4070;flex:1;text-transform:uppercase;letter-spacing:.4px}
+.sec-count{font-size:10px;color:#aab}
+.sec-bar{width:50px;height:3px;background:#e0e5ef;border-radius:2px;overflow:hidden;flex-shrink:0}
+.sec-bar-fill{height:100%;background:#1a9b5a;border-radius:2px;transition:width .3s}
+.sec-body{display:none;padding-bottom:2px}
+.sec-body.open{display:block}
+
+.p-row{display:flex;align-items:center;gap:8px;padding:7px 16px 7px 40px;border-top:1px solid #f0f3f8;transition:background .1s}
+.p-row:hover{background:#fafbff}
+.p-row.filled{background:#f4fff8}
+.p-row.direct{padding-left:28px}
+.p-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background .2s}
+.p-dot.empty{background:#dde2ea}.p-dot.done{background:#1a9b5a}
+.p-num{font-size:10px;color:#c0c8d8;min-width:24px;text-align:right;flex-shrink:0}
+.p-name{flex:1;font-size:12px;color:#334;line-height:1.3}
+.p-inc{font-size:10px;color:#aab;min-width:40px;text-align:right;flex-shrink:0}
+.p-inp{min-width:120px;display:flex;align-items:center;justify-content:flex-end;gap:4px;flex-shrink:0}
+
+.pct-wrap{display:flex;align-items:center;gap:3px}
+.pct-input{width:64px;padding:5px 7px;border:1.5px solid #d0d8e8;border-radius:5px;font-size:13px;font-weight:600;color:#224;text-align:right;background:#fafbff;transition:border-color .15s}
+.pct-input:focus{outline:none;border-color:#4488cc;background:white}
+.pct-input.filled{border-color:#1a9b5a;background:#f0fff7}
+.pct-sym{font-size:11px;color:#8899bb}
+
+.viv-btn{padding:5px 10px;border-radius:5px;border:1.5px solid #cc8822;background:#fff8f0;color:#7a4800;font-size:11px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px;transition:all .15s;white-space:nowrap}
+.viv-btn:hover{background:#ffe8cc;border-color:#e8821a}
+.viv-btn.filled{background:#fff0d8;border-color:#e8821a}
+.viv-cnt{background:#e8821a;color:white;border-radius:10px;padding:1px 5px;font-size:9px;font-weight:700;min-width:18px;text-align:center}
+
+/* MODAL */
+.modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:200;justify-content:center;align-items:center}
+.modal-ov.open{display:flex}
+.modal-box{background:white;border-radius:13px;width:94vw;max-width:760px;max-height:88vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.4)}
+.modal-top{background:#1a2744;color:white;padding:12px 18px;display:flex;align-items:center;justify-content:space-between}
+.modal-tit{font-size:13px;font-weight:700}
+.modal-sub{font-size:10px;color:#8899bb;margin-top:2px}
+.modal-x{background:none;border:none;color:#8899bb;font-size:18px;cursor:pointer}
+.modal-x:hover{color:white}
+.modal-body{padding:14px;overflow-y:auto;flex:1}
+.modal-foot{padding:10px 18px;border-top:1px solid #eef;display:flex;align-items:center;justify-content:space-between}
+.modal-sel{font-size:11px;color:#5566aa}
+.modal-n{font-weight:700;color:#1a9b5a}
+.confirm-btn{padding:7px 18px;background:#1a6b3a;color:white;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer}
+.confirm-btn:hover{background:#138030}
+
+.quick-bar{display:flex;gap:5px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.qb-lbl{font-size:10px;color:#8899bb}
+.qchip{padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid;transition:all .12s}
+.qchip.sm1{border-color:#4488dd;color:#2266bb;background:#eef5ff}.qchip.sm2{border-color:#44aa55;color:#228833;background:#eefff2}
+.qchip.v{border-color:#dd8833;color:#aa5500;background:#fff8ee}.qchip.e{border-color:#aa55bb;color:#773399;background:#fcf0ff}
+.qchip.vmr{border-color:#7744cc;color:#5522aa;background:#f0e8ff}
+.qchip.all{border-color:#8899bb;color:#4455aa;background:#f4f6fb}.qchip.none{border-color:#ccccdd;color:#8899bb;background:#fafafa}
+.qchip.mz{border-color:#1a2744;color:#1a2744;background:#e8ecf8;font-size:11px;padding:3px 11px}
+.qchip.mz.active{background:#1a2744;color:white}
+.qchip:hover{opacity:.8}
+
+.mz-wrap{margin-bottom:12px}
+.mz-lbl{font-size:10px;font-weight:700;color:#2c4070;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;display:flex;align-items:center;gap:5px}
+.mz-badge{background:#1a2744;color:white;padding:1px 6px;border-radius:3px;font-size:9px}
+.lotes-grid{display:flex;flex-wrap:wrap;gap:3px}
+.lote{width:32px;height:32px;border-radius:5px;border:1.5px solid #d0d8e8;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;color:#556;cursor:pointer;transition:all .1s;background:#f8f9fd;user-select:none}
+.lote:hover{border-color:#e8821a;background:#fff3e0}
+.lote.sel{background:#e8821a;border-color:#c06010;color:white}
+.lote.sm1{border-color:#b8d0f0;background:#ddeeff}.lote.sm1.sel{background:#4488dd;border-color:#2266bb;color:white}
+.lote.sm2{border-color:#c0d8b8;background:#ddf0dd}.lote.sm2.sel{background:#44aa55;border-color:#228833;color:white}
+.lote.v{border-color:#f0d0b0;background:#fff0d8}.lote.v.sel{background:#dd8833;border-color:#bb6611;color:white}
+.lote.e{border-color:#e0b8d8;background:#f8e8f8}.lote.e.sel{background:#aa55bb;border-color:#883399;color:white}
+.lote.vmr{border-color:#c0a0e0;background:#f0e8ff}.lote.vmr.sel{background:#7744cc;border-color:#5522aa;color:white}
+
+/* COMPARE */
+.cmp-wrap{max-width:1050px;margin:0 auto;padding:14px 12px}
+.cmp-card{background:white;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden;margin-bottom:10px}
+.cmp-top{background:#1a2744;color:white;padding:12px 18px}
+.cmp-top-tit{font-size:14px;font-weight:700}
+.cmp-hrow{display:grid;grid-template-columns:1fr 170px 170px 60px;gap:6px;padding:7px 16px;background:#e4ecf8;font-size:10px;font-weight:700;color:#2c4070;text-transform:uppercase;letter-spacing:.5px}
+.cmp-row{display:grid;grid-template-columns:1fr 170px 170px 60px;gap:6px;padding:7px 16px;border-top:1px solid #f0f2f8;align-items:center}
+.cmp-row:hover{background:#fafbff}
+.cmp-pn{font-size:11px;color:#334}
+.cmp-pnum{font-size:9px;color:#aab;margin-right:3px}
+.cmp-val{text-align:center;font-weight:700;font-size:12px}
+.ok{color:#1a9b5a}.diff{color:#cc4422}
+.ok-badge{background:#f0fff8;border:1px solid #bbffdd;color:#1a7a45;border-radius:4px;padding:2px 5px;font-size:10px;font-weight:700}
+.diff-badge{background:#fff0ee;border:1px solid #ffccbb;color:#cc4422;border-radius:4px;padding:2px 5px;font-size:10px;font-weight:700}
+.lote-diff{font-size:10px;margin-top:3px;text-align:left;line-height:1.3}
+.jt-only{color:#cc4422}.cal-only{color:#1a5aaa}
+.grp-sep{background:#f0f4fc;padding:5px 16px 5px 22px;font-size:10px;font-weight:700;color:#4455aa;text-transform:uppercase;letter-spacing:.4px;border-top:1px solid #eef}
+.cmp-sum{display:flex;border-top:2px solid #eef}
+.cmp-sum-item{flex:1;text-align:center;padding:12px 8px;border-right:1px solid #eef}
+.cmp-sum-item:last-child{border-right:none}
+.cmp-sum-n{font-size:22px;font-weight:800}
+.cmp-sum-lbl{font-size:10px;color:#5566aa;margin-top:2px}
+
+.bottom-bar{position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #e0e5ef;padding:8px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 -2px 12px rgba(0,0,0,.1);z-index:90}
+.nav-links{display:flex;gap:6px}
+.nav-btn{padding:7px 12px;background:#f0f2f8;border:1px solid #d8dce8;border-radius:7px;font-size:11px;color:#4455aa;cursor:pointer;font-weight:600;transition:all .15s}
+.nav-btn:hover{background:#e0e5f8}
+.nav-btn.active{background:#1a2744;color:white;border-color:#1a2744}
+.save-btn{padding:8px 20px;background:#1a6b3a;color:white;border:none;border-radius:7px;font-size:13px;font-weight:700;cursor:pointer}
+.save-btn:hover{background:#138030}
+.save-st{font-size:10px;color:#aab}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="hlogo">Constructora Londres</span>
+  <span class="htitle">Obra Jose Venturelli</span>
+  <div class="hright">
+    <span class="week-pill" id="week-pill">Cargando...</span>
+    <span class="role-badge" id="role-badge" style="display:none"></span>
+    <button class="logout-btn" id="btn-logout" style="display:none">&#128682; Salir</button>
+  </div>
+</div>
+
+<div class="prog-wrap" id="prog-wrap" style="display:none">
+  <span class="prog-txt" id="prog-txt">0 / 0 partidas</span>
+  <div class="prog-track"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+  <span class="prog-pct" id="prog-pct">0%</span>
+</div>
+
+<div class="screen active" id="sc-login">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-title">Auditoria Interna Gantt</div>
+      <div class="login-sub">Obra Jose Venturelli</div>
+      <div class="login-lbl">Ingresar como:</div>
+      <button class="rbtn jt" id="btn-jt">
+        <span class="rbtn-icon">&#128119;</span>
+        <div><div class="rbtn-name">Jefe de Terreno</div><div class="rbtn-desc">Ingresa tu evaluacion semanal</div></div>
+      </button>
+      <button class="rbtn cal" id="btn-cal">
+        <span class="rbtn-icon">&#128203;</span>
+        <div><div class="rbtn-name">Calidad</div><div class="rbtn-desc">Ingresa tu evaluacion de calidad</div></div>
+      </button>
+      <button class="rbtn gaby" id="btn-gaby">
+        <span class="rbtn-icon">&#128269;</span>
+        <div><div class="rbtn-name">Comparacion</div><div class="rbtn-desc">Ver diferencias JT vs Calidad</div></div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="sc-pin">
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-title" id="pin-title">PIN de acceso</div>
+      <div class="login-sub" id="pin-semana">Ingresa tu PIN de acceso</div>
+      <input type="password" id="pin-input" inputmode="numeric" maxlength="4"
+        style="width:100%;text-align:center;font-size:32px;font-weight:800;letter-spacing:8px;padding:14px;border:2px solid #334;border-radius:8px;background:#0a0f1f;color:white;margin:20px 0;outline:none">
+      <div id="pin-error" style="color:#ff6655;font-size:12px;margin-bottom:10px;min-height:16px"></div>
+      <button id="pin-confirm" style="width:100%;padding:12px;background:#1a6b3a;color:white;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:8px">Confirmar</button>
+      <button id="pin-back" style="width:100%;padding:10px;background:transparent;color:#8899bb;border:1px solid #334;border-radius:8px;font-size:12px;cursor:pointer">Volver</button>
+    </div>
+  </div>
+</div>
+
+<div class="screen" id="sc-audit">
+  <div class="audit-wrap" id="audit-container"></div>
+  <div style="height:60px"></div>
+</div>
+
+<div class="screen" id="sc-compare">
+  <div class="cmp-wrap" id="cmp-container"></div>
+  <div style="height:60px"></div>
+</div>
+
+<div class="modal-ov" id="modal">
+  <div class="modal-box">
+    <div class="modal-top">
+      <div>
+        <div class="modal-tit">Seleccionar viviendas</div>
+        <div class="modal-sub" id="modal-sub"></div>
+      </div>
+      <button class="modal-x" id="modal-x">&#10005;</button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-foot">
+      <div class="modal-sel"><span class="modal-n" id="modal-n">0</span> viviendas seleccionadas</div>
+      <button class="confirm-btn" id="modal-confirm">&#10003; Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-bar" id="bottom-bar" style="display:none">
+  <div class="nav-links">
+    <button class="nav-btn active" id="btn-nav-audit">&#128221; Partidas</button>
+    <button class="nav-btn" id="btn-nav-cmp">&#128202; Comparar</button>
+  </div>
+  <span class="save-st" id="save-st">Sin guardar</span>
+  <button class="save-btn" id="save-btn">&#128190; Guardar</button>
+</div>
+
+<script>
+var CHAPTERS = [{"id":"OP","titulo":"OBRAS PREVIAS","sections":[{"titulo":"LEV. TOPOGRAFIA Y TRAZADO","partidas":[{"id":1,"nombre":"O.PREV - LEVANTAMIENTO TOPOGRAFÍA Y TRAZADO","tipo":"pct","inc":0.08478834074731127}]},{"titulo":"ESCARPE","partidas":[{"id":2,"nombre":"O.PREV - ESCARPE MZ B3-A1-A3-A5-B2-A11-A12-A7-A6-B1-A10-A9-A8-B5A2-B4","tipo":"pct","inc":0.3391533629892451}]},{"titulo":"CORTES - RELLENOS","partidas":[{"id":3,"nombre":"O.PREV - CORTE-RELLENO MZ B3-A1-A3-A5-B2-A11-A12-A7-A6-B1-A10-A9-A8-B5A2-B4","tipo":"pct","inc":0.21104812142992557}]},{"titulo":"PLATAFORMAS","partidas":[{"id":4,"nombre":"O.PREV - PLATAFORMAS MZ B3-A1-A3-A5-B2-A11-A12-A7-A6-B1-A10-A9-A8-B5A2-B4","tipo":"pct","inc":0.365010174833518}]}]},{"id":"VIV","titulo":"VIVIENDAS","groups":[{"titulo":"OBRA GRUESA","sections":[{"titulo":"OG - FUNDACION","partidas":[{"id":5,"nombre":"OG - FUNDACIÓN - TRAZADO + INSTALACIÓN DE NIVELETAS","tipo":"viv","inc":0.0015811383840843433},{"id":6,"nombre":"OG - FUNDACIÓN - EXCAVACIÓN + PERFILADO","tipo":"viv","inc":0.011510073785316892},{"id":7,"nombre":"OG - FUNDACIÓN - RECEPCIÓN SELLO","tipo":"viv","inc":0.002877518446329223},{"id":8,"nombre":"OG - FUNDACIÓN - MALLA DE TIERRA","tipo":"viv","inc":0.004675385635052951},{"id":9,"nombre":"OG - FUNDACIÓN - EMPLANTILLADO","tipo":"viv","inc":0.005468103318989993},{"id":10,"nombre":"OG - FUNDACIÓN - TRAZADO EN EMPLANTILLADO","tipo":"viv","inc":0.0010317313887134015},{"id":11,"nombre":"OG - FUNDACIÓN - ARMADURA, TENSORES","tipo":"viv","inc":0.006190388332280408},{"id":12,"nombre":"OG - FUNDACIÓN - HORMIGÓN CIMIENTO","tipo":"viv","inc":0.018941481870126457},{"id":13,"nombre":"OG - FUNDACIÓN - TRAZADO SOBRECIMIENTO","tipo":"viv","inc":0.0005158656943567007},{"id":14,"nombre":"OG - FUNDACIÓN - ENFIERRADURA SOBRECIMIENTO","tipo":"viv","inc":0.002579328471783503},{"id":15,"nombre":"OG - FUNDACIÓN - MOLDAJE SOBRECIMIENTO","tipo":"viv","inc":0.0024228198036211576},{"id":16,"nombre":"OG - FUNDACIÓN - HORMIGÓN SOBRECIMIENTO","tipo":"viv","inc":0.0024722536886630894},{"id":17,"nombre":"OG - FUNDACIÓN - DESCIMBRE MOLDAJE SOBRECIMIENTO","tipo":"viv","inc":0.0010383513444090677},{"id":18,"nombre":"OG - FUNDACIÓN - INSTALACIÓN PLANTA ALCANTARILLADO","tipo":"viv","inc":0.015523627358258643},{"id":19,"nombre":"OG - FUNDACIÓN - AGUA POTABLE BAJO RADIER","tipo":"viv","inc":0.0021258694985813024},{"id":20,"nombre":"OG - FUNDACIÓN - PRUEBAS ALCANTARILLADO","tipo":"viv","inc":0.006371590769276656},{"id":21,"nombre":"OG - FUNDACIÓN - PRUEBAS AGUA POTABLE","tipo":"viv","inc":0.003926483528985638},{"id":22,"nombre":"OG - FUNDACIÓN - RELLENO INTERIOR + CAMA DE RIPIO + POLIETILENO","tipo":"viv","inc":0.007552306519279412},{"id":23,"nombre":"OG - FUNDACIÓN - HORMIGÓN RADIER","tipo":"viv","inc":0.01096645682739125}]},{"titulo":"OG - MUROS Y LOSA PISO 1","partidas":[{"id":24,"nombre":"OG - 1°PISO MURO Y LOSA - TRAZADO MURO","tipo":"viv","inc":0.00091840860315532},{"id":25,"nombre":"OG - 1°PISO MURO Y LOSA - ENFIERRADURA MURO","tipo":"viv","inc":0.017449763459951077},{"id":26,"nombre":"OG - 1°PISO MURO Y LOSA - DISTRIBUCIÓN INSTALACIONES MURO","tipo":"viv","inc":0.05889725293478456},{"id":27,"nombre":"OG - 1°PISO MURO Y LOSA - PASADAS + VENTILACIÓN PASIVA Y EXTRACTOR","tipo":"viv","inc":0.00263280936287082},{"id":28,"nombre":"OG - 1°PISO MURO Y LOSA - MOLDAJE MUROS Y LOSA","tipo":"pct","inc":0.024505392959096848},{"id":29,"nombre":"OG - 1°PISO MURO Y LOSA - TRAZADO Y ENFIERRADURA LOSA","tipo":"pct","inc":0.013541766723512252},{"id":30,"nombre":"OG - 1°PISO MURO Y LOSA - INSTALACIÓN ELÉCTRICA-SANITARIA-PASADAS ALC LOSA","tipo":"viv","inc":0.005135522210810099},{"id":31,"nombre":"OG - 1°PISO MURO Y LOSA - REBALSE LOSA + JUNTA EN FRÍO","tipo":"pct","inc":0.012252696479548424},{"id":32,"nombre":"OG - 1°PISO MURO Y LOSA - HORMIGONADO","tipo":"pct","inc":0.03847174059266668},{"id":33,"nombre":"OG - 1°PISO MURO Y LOSA - DESCIMBRE","tipo":"pct","inc":0.004084232159849475}]},{"titulo":"OG - MUROS HA PISO 2","partidas":[{"id":34,"nombre":"OG - 2°PISO MURO HA - TRAZADO","tipo":"pct","inc":0.00025911231502093743},{"id":35,"nombre":"OG - 2°PISO MURO HA - ENFIERRADURA","tipo":"pct","inc":0.004923133985397811},{"id":36,"nombre":"OG - 2°PISO MURO HA - ARMADO DE ANDAMIOS","tipo":"pct","inc":0.0008602630330269019},{"id":37,"nombre":"OG - 2°PISO MURO HA - DISTRIBUCIÓN ELÉCTRICA","tipo":"pct","inc":0.001117199408387006},{"id":38,"nombre":"OG - 2°PISO MURO HA - MOLDAJE","tipo":"pct","inc":0.009756229799828587},{"id":39,"nombre":"OG - 2°PISO MURO HA - HORMIGONADO","tipo":"pct","inc":0.006021841231188312},{"id":40,"nombre":"OG - 2°PISO MURO HA - DESCIMBRE","tipo":"pct","inc":0.0017205260660538037}]},{"titulo":"OG - MURO PERIMETRAL PISO 2","partidas":[{"id":41,"nombre":"OG - 2°PISO MURO PERIMETRAL - ARMADO DE ANDAMIO","tipo":"pct","inc":0.007799392487558719},{"id":42,"nombre":"OG - 2°PISO MURO PERIMETRAL - TRAZADO","tipo":"pct","inc":0.0019498481218896797},{"id":43,"nombre":"OG - 2°PISO MURO PERIMETRAL - ESTRUCTURA ACERO GALVANIZADO","tipo":"pct","inc":0.02339817746267616}]},{"titulo":"OG - TECHUMBRE PISO 2","partidas":[{"id":44,"nombre":"OG - TECHUMBRE - ESTRUCTURA Y ARRIOSTRAMIENTOS","tipo":"pct","inc":0.02300841276633215},{"id":45,"nombre":"OG - TECHUMBRE - FRONTÓN Y MURO CORTAFUEGO","tipo":"pct","inc":0.003655909444561769},{"id":46,"nombre":"OG - TECHUMBRE - COLOCACIÓN DE FIELTRO + CUBIERTA","tipo":"pct","inc":0.019562396846593177}]},{"titulo":"OG - FORRO MURO PERIMETRAL PISO 2","partidas":[{"id":47,"nombre":"OG - 2°PISO MURO PERIMETRAL - INSTALACIÓN OSB + FIELTRO","tipo":"pct","inc":0.0023615071281450277},{"id":48,"nombre":"OG - 2°PISO MURO PERIMETRAL - REVESTIMIENTO EXTERIOR SIDING PREPINTADO","tipo":"pct","inc":0.01889205702516022},{"id":49,"nombre":"OG - 2°PISO MURO PERIMETRAL - MARCO VENTANAS","tipo":"pct","inc":0.0036153181946878155},{"id":50,"nombre":"OG - 2°PISO MURO PERIMETRAL - HOJALATERÍA SIDING","tipo":"pct","inc":0.0002836733162367517},{"id":51,"nombre":"OG - 2°PISO MURO PERIMETRAL - FORRO VENTANAS","tipo":"pct","inc":0.0002836733162367517},{"id":52,"nombre":"OG - 2°PISO MURO PERIMETRAL - VENTILACÓN PASIVA (SE DEJA PASADA)","tipo":"pct","inc":0.00026008068399527957},{"id":53,"nombre":"OG - 2°PISO MURO PERIMETRAL - TAPACÁN C/PINTURA","tipo":"pct","inc":0.003039941616746699},{"id":54,"nombre":"OG - 2°PISO MURO PERIMETRAL - CELOSÍA VENTILACIÓN","tipo":"pct","inc":0.000785295650803745},{"id":55,"nombre":"OG - 2°PISO MURO PERIMETRAL - COLOCACIÓN CANAL Y BAJADA ALL (SOLO 2P)","tipo":"pct","inc":0.006211688912295033},{"id":56,"nombre":"OG - ENTREGA DE OG A TG","tipo":"pct","inc":0.0003269309953839491},{"id":57,"nombre":"OG - 2°PISO MURO PERIMETRAL - DESARME DE ANDAMIO","tipo":"pct","inc":0.0023615071281450277}]}]},{"titulo":"TERMINACIONES GRUESAS","sections":[{"titulo":"TG - GRUPO 1","partidas":[{"id":58,"nombre":"TERM - DESCARACHADO Y PULIDO","tipo":"pct","inc":0.0027167165938292177},{"id":59,"nombre":"TERM - TAPADO VAINAS","tipo":"pct","inc":0.0011643071116410931},{"id":60,"nombre":"TERM - TRAZADO RASGOS 1°PISO","tipo":"pct","inc":0.00031000872708612163},{"id":61,"nombre":"TERM - REMATE DE RASGOS VENTANAS Y PUERTAS","tipo":"pct","inc":0.004650130906291824},{"id":62,"nombre":"TERM - IMPERMEABILIZACIÓN VANOS","tipo":"pct","inc":0.0012400349083444865}]},{"titulo":"TG - GRUPO 2","partidas":[{"id":63,"nombre":"TERM - FAJEO YESO MURO Y LOSA","tipo":"pct","inc":0.022001296521026885},{"id":64,"nombre":"TERM - INSTALACIÓN ALFEIZAR","tipo":"pct","inc":0.0035403170104426236},{"id":65,"nombre":"TERM - REMATES Y CUADRATURAS DE YESO","tipo":"pct","inc":0.0024445885023363203},{"id":66,"nombre":"TERM - INSTALACIÓN ESCALA SIN BARANDA","tipo":"pct","inc":0.014361150665415543}]},{"titulo":"TG - GRUPO 3","partidas":[{"id":67,"nombre":"TERM - INSTALACIÓN MARCO + PUERTA ACCESO Y COCINA","tipo":"pct","inc":0.008926050173367783},{"id":68,"nombre":"TERM - INSTALACIÓN VENTANAS","tipo":"pct","inc":0.04534785141773422},{"id":69,"nombre":"TERM - DISTRIBUCIÓN ELÉCTRICA M. PERIMETRAL","tipo":"pct","inc":0.0018532895343209472},{"id":70,"nombre":"TERM - AISLACIÓN + TAPADO 2DA CARA M. PERIMETRAL","tipo":"pct","inc":0.00584954436566904},{"id":71,"nombre":"TERM - ESTRUCTURACIÓN CIELO","tipo":"pct","inc":0.004885109494687536},{"id":72,"nombre":"TERM - INSTALACIÓN ELÉCTRICA CIELO","tipo":"pct","inc":0.001840161117196107},{"id":73,"nombre":"TERM - AISLACIÓN + TAPADO CIELO","tipo":"pct","inc":0.01102237231566657}]},{"titulo":"TG - GRUPO 4","partidas":[{"id":74,"nombre":"TERM - TRAZADO TABIQUES","tipo":"pct","inc":0.0005316157989310435},{"id":75,"nombre":"TERM - ESTRUCTURA TABIQUES 1a CARA","tipo":"pct","inc":0.010100700179689826},{"id":76,"nombre":"TERM - SHAFT VERTICALES Y HORIZONTALES","tipo":"pct","inc":0.0031719345823332267},{"id":77,"nombre":"TERM - DESCARGA DE ALCANT. + DIST. AGUA POTABLE","tipo":"pct","inc":0.0016607712969499218},{"id":78,"nombre":"TERM - DISTRIBUCIÓN ELÉCTRICA","tipo":"pct","inc":0.002497416542742214},{"id":79,"nombre":"TERM - PRUEBA DE PRESIÓN","tipo":"pct","inc":0.007852967057971276},{"id":80,"nombre":"TERM - TAPADO TABIQUES 2a CARA + REFUERZOS","tipo":"pct","inc":0.019909228553174067},{"id":81,"nombre":"TERM - IMPERMEABILIZACIÓN ZONAS HÚMEDAS","tipo":"pct","inc":0.0010478541343775826}]},{"titulo":"TG - GRUPO 5","partidas":[{"id":82,"nombre":"TERM - ESTRUCTURACIÓN TINA","tipo":"pct","inc":0.0009385373797393386},{"id":83,"nombre":"TERM - INSTALACIÓN TINAS","tipo":"pct","inc":0.006442875025181443},{"id":84,"nombre":"TERM - INST. PUERTAS PRE COLGADAS","tipo":"pct","inc":0.011174378567595148},{"id":85,"nombre":"TERM - CERÁMICOS DE PISO","tipo":"pct","inc":0.019128505313682636},{"id":86,"nombre":"TERM - CERÁMICOS DE MUROS","tipo":"pct","inc":0.006677013443356899},{"id":87,"nombre":"TERM - FRAGUE CERÁMICOS","tipo":"pct","inc":0.0007418903825952111}]},{"titulo":"TG - GRUPO 6","partidas":[{"id":88,"nombre":"TERM - INSTALACIÓN GUARDAPOLVOS","tipo":"pct","inc":0.00606881438143219},{"id":89,"nombre":"TERM - COLOCACIÓN CORNISAS","tipo":"pct","inc":0.005670817189519599},{"id":90,"nombre":"TERM - QUINCALLERÍA PUERTAS INTERIORES","tipo":"pct","inc":0.005694967031062303},{"id":91,"nombre":"TERM - ENTREGA DE TG A TF","tipo":"pct","inc":0.0002997351068980159}]}]},{"titulo":"TERMINACIONES FINAS","sections":[{"titulo":"TF - GRUPO 7","partidas":[{"id":92,"nombre":"TERM - ALAMBRADO ELÉCTRICO","tipo":"pct","inc":0.029903003340269158},{"id":93,"nombre":"TERM - TABLERO, MÓDULOS Y ARTEFACTOS ELÉCTRICOS","tipo":"pct","inc":0.011243510253440132}]},{"titulo":"TF - GRUPO 8","partidas":[{"id":94,"nombre":"TERM - PINTURA 1a MANO CIELOS","tipo":"pct","inc":0.0008380038774532278},{"id":95,"nombre":"TERM - PINTURA LOSALÍN CIELOS (GRANO)","tipo":"pct","inc":0.004028774178011968},{"id":96,"nombre":"TERM - PINTURA 1a MANO MUROS","tipo":"pct","inc":0.013130696141022302},{"id":97,"nombre":"TERM - PINTURA 1a MANO ESCALA","tipo":"pct","inc":0.0012207822985138511},{"id":98,"nombre":"TERM - PINTURA 1a MANO PUERTAS Y GUARDAPOLVOS","tipo":"pct","inc":0.004213226833675093}]},{"titulo":"TF - GRUPO 9","partidas":[{"id":99,"nombre":"TERM - PINTURA 2a MANO CIELOS","tipo":"pct","inc":0.00604316126701795},{"id":100,"nombre":"TERM - PINTURA 2a MANO MUROS","tipo":"pct","inc":0.01383269732077876},{"id":101,"nombre":"TERM - PINTURA 2a MANO PUERTAS Y GUARDAPOLVOS","tipo":"pct","inc":0.006319840250512639},{"id":102,"nombre":"TERM - PINTURA 2a MANO ESCALA","tipo":"pct","inc":0.0018311734477707766}]},{"titulo":"TF - GRUPO 10","partidas":[{"id":103,"nombre":"TERM - INSTALACIÓN ARTEFACTOS SANITARIOS","tipo":"pct","inc":0.007577146125145846},{"id":104,"nombre":"TERM - INSTALACIÓN DE CLOSET","tipo":"pct","inc":0.007582768298867386},{"id":105,"nombre":"TERM - INSTALACIÓN MUEBLES DE COCINA","tipo":"pct","inc":0.0054462662956450145},{"id":106,"nombre":"TERM - INSTALACIÓN LAVAPLATOS","tipo":"pct","inc":0.003349447604262814},{"id":107,"nombre":"TERM - COLOCACIÓN DE GRIFERÍAS","tipo":"pct","inc":0.001337143433849267}]},{"titulo":"TF - GRUPO 11","partidas":[{"id":108,"nombre":"TERM - SELLO PARA PAPEL MURAL","tipo":"pct","inc":0.019098467369526022},{"id":109,"nombre":"TERM - INSTALACIÓN PAPEL MURAL","tipo":"pct","inc":0.011342498426850567},{"id":110,"nombre":"TERM - INSTALACIÓN PISO FLOTANTE Y CUBREJUNTAS","tipo":"pct","inc":0.03388341743700905},{"id":111,"nombre":"TERM - BARANDAS DE ESCALA","tipo":"pct","inc":0.003590287666353886},{"id":112,"nombre":"TERM - COLOCACIÓN TOPES DE PUERTA","tipo":"pct","inc":0.00043338908812556805},{"id":113,"nombre":"TERM - REMATES DE PINTURA","tipo":"pct","inc":0.0011098618631708934},{"id":114,"nombre":"TERM - SELLOS DE TERMINACIÓN","tipo":"pct","inc":0.003116923756701963},{"id":115,"nombre":"TERM - ASEO FINO","tipo":"pct","inc":0.0030127951866457236}]}]},{"titulo":"FACHADAS","sections":[{"titulo":"FACH - GRUPO 1","partidas":[{"id":116,"nombre":"FACHADA - DESCARACHADO Y PULIDO","tipo":"pct","inc":0.0038810237054703114},{"id":117,"nombre":"FACHADA - REMATES","tipo":"pct","inc":0.009160473615957744}]},{"titulo":"FACH - GRUPO 2","partidas":[{"id":118,"nombre":"FACHADA - PEGADO POLIESTIRENO EIFS","tipo":"pct","inc":0.017577229011529395},{"id":119,"nombre":"FACHADA - RASPADO POLIESTIRENO","tipo":"pct","inc":0.017577229011529395},{"id":120,"nombre":"FACHADA - INSTALACION MALLA Y BASE COAT EIFS","tipo":"pct","inc":0.008788614505764698},{"id":121,"nombre":"FACHADA - PINTURA DE FONDO EFIS","tipo":"pct","inc":0.017577229011529395},{"id":122,"nombre":"FACHADA - GRANO EIFS","tipo":"pct","inc":0.023729259165564676},{"id":123,"nombre":"FACHADA - INSTALACIÓN BAJADAS DE ALL (1°PISO)","tipo":"pct","inc":0.0026916464987873077},{"id":124,"nombre":"FACHADA - REMATE PINTURA","tipo":"pct","inc":0.0026365843517294086},{"id":125,"nombre":"FACHADA - CELOSIA (VENTILACION PASIVA)","tipo":"pct","inc":0.002340726155957516},{"id":126,"nombre":"FACHADA - GABINETE CALEFON","tipo":"pct","inc":0.0030312199089676303}]}]},{"titulo":"EXTERIORES (PATIOS)","sections":[{"titulo":"EXT - GRUPO 1","partidas":[{"id":127,"nombre":"PATIO - CIERRO PLACA","tipo":"pct","inc":0.02265056311816452},{"id":128,"nombre":"PATIO - EMPAREJAMIENTO PATIO (GRUESO)","tipo":"pct","inc":0.008196918219873275},{"id":129,"nombre":"PATIO - INSTALACIÓN PASTELONES","tipo":"pct","inc":0.004117181568796718},{"id":130,"nombre":"PATIO - RED EXTERIOR GAS","tipo":"pct","inc":0.011811336402970447},{"id":131,"nombre":"PATIO - RADIER BALONES DE GAS","tipo":"pct","inc":0.00017795585462139268},{"id":132,"nombre":"PATIO - RADIER LAVADERO","tipo":"pct","inc":0.00027814589954017817},{"id":133,"nombre":"PATIO - INST. LAVADERO","tipo":"pct","inc":0.002503313095861604},{"id":134,"nombre":"PATIO - INSTALACIÓN REJA","tipo":"pct","inc":0.024965794055328817}]},{"titulo":"EXT - GRUPO 2","partidas":[{"id":135,"nombre":"PATIO - PINTURA REJA","tipo":"pct","inc":0.006241448513832204},{"id":136,"nombre":"PATIO - CALEFON","tipo":"pct","inc":0.005565996267581749},{"id":137,"nombre":"PATIO - REGULADOR DE GAS","tipo":"pct","inc":0.00238542697182075},{"id":138,"nombre":"PATIO - MEDIDOR ELÉCTRICO","tipo":"pct","inc":0.00280073204366436},{"id":139,"nombre":"PATIO - POSTE DE PASO ELÉCTRICO","tipo":"pct","inc":0.001591973045779684},{"id":140,"nombre":"PATIO - EMPALME ELÉCTRICO","tipo":"pct","inc":0.003136407740063288},{"id":141,"nombre":"PATIO - ASEO FINAL PATIO","tipo":"pct","inc":0.0009107686910970305}]}]},{"titulo":"ENTREGA","sections":[],"partidas":[{"id":142,"nombre":"ENT-LISTADO OBSERVACIONES DE CALIDAD","tipo":"pct","inc":0.0002805115825282017},{"id":143,"nombre":"ENT-OBTENCIÓN R1","tipo":"pct","inc":0.0016743707151182696},{"id":144,"nombre":"ENT-LISTADO OBSERVACIONES DE POSTVENTA","tipo":"pct","inc":0.00019711884978895611},{"id":145,"nombre":"ENT-OBTENCIÓN RF","tipo":"pct","inc":0.005208386530793971}]}]},{"id":"URB","titulo":"URBANIZACION","sections":[{"titulo":"ALCANTARILLADO - TUBERIA COLECTOR","partidas":[{"id":146,"nombre":"URBA - ALC - COLECTOR Y UD - TRAZADO","tipo":"pct","inc":0.001615867704628359},{"id":147,"nombre":"URBA - ALC - COLECTOR Y UD - EXCAVACIÓN","tipo":"pct","inc":0.030701486387938817},{"id":148,"nombre":"URBA - ALC - COLECTOR Y UD - ENCAMADO","tipo":"pct","inc":0.005518788073406669},{"id":149,"nombre":"URBA - ALC - COLECTOR Y UD - INSTALACIÓN DE TUBERÍA + UD","tipo":"pct","inc":0.02272842426325368},{"id":150,"nombre":"URBA - ALC - COLECTOR Y UD - RELLENO LATERAL E INICIAL","tipo":"pct","inc":0.02215485439985397},{"id":151,"nombre":"URBA - ALC - COLECTOR Y UD - PRUEBAS DE HERMETICIDAD AS","tipo":"pct","inc":0.0025253804736948536},{"id":152,"nombre":"URBA - ALC - COLECTOR Y UD - RELLENO INTERMEDIO Y FINAL","tipo":"pct","inc":0.011771625204926152}]},{"titulo":"ALCANTARILLADO - CAMARAS","partidas":[{"id":153,"nombre":"URBA - ALC - CÁMARAS - EXCAVACIÓN","tipo":"pct","inc":0.0061454071457010045},{"id":154,"nombre":"URBA - ALC - CÁMARAS - RADIER BANQUETA","tipo":"pct","inc":0.012290814291402009},{"id":155,"nombre":"URBA - ALC - CÁMARAS - INSTALACIÓN DE MÓDULOS","tipo":"pct","inc":0.018436221437103013},{"id":156,"nombre":"URBA - ALC - CÁMARAS - RELLENOS","tipo":"pct","inc":0.0061454071457010045},{"id":157,"nombre":"URBA - ALC - CÁMARAS - LOSA","tipo":"pct","inc":0.0061454071457010045},{"id":158,"nombre":"VIVIENDAS - ALC - CÁMARA DOMICILIARIA DE ALCANTARILLADO","tipo":"pct","inc":0.0061454071457010045},{"id":159,"nombre":"VIVIENDAS - ALC - BANQUETA + AFINADO","tipo":"pct","inc":0.0061454071457010045}]},{"titulo":"AGUAS LLUVIA - TUBERIA","partidas":[{"id":160,"nombre":"URBA - ALL - TUBERÍA - TRAZADO","tipo":"pct","inc":0.0004590815708512076},{"id":161,"nombre":"URBA - ALL - TUBERÍA - EXCAVACIÓN","tipo":"pct","inc":0.008722549846172942},{"id":162,"nombre":"URBA - ALL - TUBERÍA - ENCAMADO","tipo":"pct","inc":0.0029504463818254686},{"id":163,"nombre":"URBA - ALL - TUBERÍA - INSTALACIÓN DE TUBERÍA + CRUCE","tipo":"pct","inc":0.03881626875472139},{"id":164,"nombre":"URBA - ALL - TUBERÍA - RELLENO LATERAL E INICIAL","tipo":"pct","inc":0.009017806927855412},{"id":165,"nombre":"URBA - ALL - TUBERÍA - RELLENO INTERMEDIO Y FINAL","tipo":"pct","inc":0.0021517773952228147}]},{"titulo":"AGUAS LLUVIA - CAMARAS","partidas":[{"id":166,"nombre":"URBA - ALL - CÁMARAS - EXCAVACIÓN","tipo":"pct","inc":0.0014797378018169829},{"id":167,"nombre":"URBA - ALL - CÁMARAS - RADIER BANQUETA","tipo":"pct","inc":0.0029594756036339658},{"id":168,"nombre":"URBA - ALL - CÁMARAS - INSTALACIÓN DE MÓDULOS","tipo":"pct","inc":0.007398689009084916},{"id":169,"nombre":"URBA - ALL - CÁMARAS - RELLENOS","tipo":"pct","inc":0.0029594756036339658}]},{"titulo":"AGUAS LLUVIA - SUMIDERO","partidas":[{"id":170,"nombre":"URBA - ALL - SUMIDERO - EXCAVACIÓN","tipo":"pct","inc":0.001818879459280262},{"id":171,"nombre":"URBA - ALL - SUMIDERO - EMPLANTILLADO","tipo":"pct","inc":0.001818879459280262},{"id":172,"nombre":"URBA - ALL - SUMIDERO - ENFIERRADURA","tipo":"pct","inc":0.003637758918560524},{"id":173,"nombre":"URBA - ALL - SUMIDERO - MOLDAJE","tipo":"pct","inc":0.003637758918560524},{"id":174,"nombre":"URBA - ALL - SUMIDERO - HORMIGÓN","tipo":"pct","inc":0.003637758918560524},{"id":175,"nombre":"URBA - ALL - SUMIDERO - REJILLA","tipo":"pct","inc":0.003637758918560524}]},{"titulo":"AGUA POTABLE","partidas":[{"id":176,"nombre":"URBA - AP - EXCAVACIÓN","tipo":"pct","inc":0.012561922687536501},{"id":177,"nombre":"URBA - AP - ENCAMADO","tipo":"pct","inc":0.003540078224080234},{"id":178,"nombre":"URBA - AP - INSTALACIÓN DE TUBERÍA + ARRANQUE","tipo":"pct","inc":0.0365105286044735},{"id":179,"nombre":"URBA - AP - CÁMARA DE VÁLVULA","tipo":"pct","inc":0.01235842419830864},{"id":180,"nombre":"URBA - AP - PRUEBA DE PRESIÓN","tipo":"pct","inc":0.0014179457211564344},{"id":181,"nombre":"URBA - AP - RELLENO LATERAL E INICIAL","tipo":"pct","inc":0.007190669415663105},{"id":182,"nombre":"URBA - AP - RELLENO INTERMEDIO Y FINAL","tipo":"pct","inc":0.008620098580148202},{"id":183,"nombre":"VIVIENDAS - PATIO - ARRANQUE A.POTABLE","tipo":"pct","inc":0.017058459862722475},{"id":184,"nombre":"VIVIENDAS - PATIO - INSTALACIÓN MEDIDORES A.POTABLE","tipo":"pct","inc":0.022981187018777688}]},{"titulo":"DREN","partidas":[{"id":185,"nombre":"URBA - DREN - EXCAVACIÓN","tipo":"pct","inc":0.04382778087136876},{"id":186,"nombre":"URBA - DREN - GEOTEXTIL","tipo":"pct","inc":0.003362526678502471},{"id":187,"nombre":"URBA - DREN - BOLONES","tipo":"pct","inc":0.06203388471928251},{"id":188,"nombre":"URBA - DREN - RELLENO SOBRE BOLON (GRAVA)","tipo":"pct","inc":0.012412719796177524},{"id":189,"nombre":"URBA - DREN - INSTALACIÓN TUBO RANURADO","tipo":"pct","inc":0.0009917967645688603},{"id":190,"nombre":"URBA - DREN - RELLENO ESTABILIZADO","tipo":"pct","inc":0.006183281092928873},{"id":191,"nombre":"URBA - DREN - RELLENO TIERRA SOBRE DREN","tipo":"pct","inc":0.0010097460725217273}]},{"titulo":"DREN - CAMARAS DECANTADORA","partidas":[{"id":192,"nombre":"URBA - DREN - CÁM. DECANTADORA - EXCAVACIÓN","tipo":"pct","inc":0.00016313119941767417},{"id":193,"nombre":"URBA - DREN - CÁM. DECANTADORA - EMPLANTILLADO","tipo":"pct","inc":8.156559970883708e-05},{"id":194,"nombre":"URBA - DREN - CÁM. DECANTADORA - ENFIERRADURA LOSA INF.","tipo":"pct","inc":0.00032626239883534833},{"id":195,"nombre":"URBA - DREN - CÁM. DECANTADORA - HORMIGÓN LOSA INF.","tipo":"pct","inc":0.00032626239883534833},{"id":196,"nombre":"URBA - DREN - CÁM. DECANTADORA - FIERRO Y MOLDAJE MURO","tipo":"pct","inc":0.00032626239883534833},{"id":197,"nombre":"URBA - DREN - CÁM. DECANTADORA - FIERRO LOSA SUPERIOR","tipo":"pct","inc":0.00016313119941767417},{"id":198,"nombre":"URBA - DREN - CÁM. DECANTADORA - HORMIGÓN MURO Y LOSA","tipo":"pct","inc":0.00024469679912651125}]},{"titulo":"DREN - CAMARAS DE LIMPIEZA","partidas":[{"id":199,"nombre":"URBA - DREN - CÁM. LIMPIEZA - EXCAVACIÓN","tipo":"pct","inc":0.00016313119941767417},{"id":200,"nombre":"URBA - DREN - CÁM. LIMPIEZA - EMPLANTILLADO","tipo":"pct","inc":8.156559970883708e-05},{"id":201,"nombre":"URBA - DREN - CÁM. LIMPIEZA - ENFIERRADURA LOSA INF.","tipo":"pct","inc":0.00032626239883534833},{"id":202,"nombre":"URBA - DREN - CÁM. LIMPIEZA - ALBAÑILERIA","tipo":"pct","inc":0.0004893935982530225},{"id":203,"nombre":"URBA - DREN - CÁM. LIMPIEZA - FIERRO LOSA SUPERIOR","tipo":"pct","inc":0.00032626239883534833},{"id":204,"nombre":"URBA - DREN - CÁM. LIMPIEZA - HORMIGÓN LOSA","tipo":"pct","inc":0.00024469679912651125}]},{"titulo":"PAVIMENTO - BASE Y SUB BASE","partidas":[{"id":205,"nombre":"URBA - PAVIMENTO - PREPARACIÓN Y COMPACTACIÓN DE SELLO","tipo":"pct","inc":0.028311408951058974},{"id":206,"nombre":"URBA - PAVIMENTO - INSTALACION SOLERAS","tipo":"pct","inc":0.03828672242753518},{"id":207,"nombre":"URBA - PAVIMENTO - PREPARACION Y COMPACTACIÓN SUB BASE","tipo":"pct","inc":0.03409081468430653},{"id":208,"nombre":"URBA - PAVIMENTO - PREPARACION Y COMPACTACIÓN BASE GRANULAR","tipo":"pct","inc":0.04353778426178956}]},{"titulo":"PAVIMENTACION VEREDA","partidas":[{"id":209,"nombre":"URBA - VEREDA - PREPARACIÓN SUB-RASANTE","tipo":"pct","inc":0.0032120404549806796},{"id":210,"nombre":"URBA - VEREDA - RELLENO BASE GRANULAR","tipo":"pct","inc":0.009531209162286981},{"id":211,"nombre":"URBA - VEREDA - MOLDAJE","tipo":"pct","inc":0.008114840705562443},{"id":212,"nombre":"URBA - VEREDA - HORMIGONADO","tipo":"pct","inc":0.028401942469468554},{"id":213,"nombre":"URBA - VEREDA - CORTE","tipo":"pct","inc":0.004057420352781222}]},{"titulo":"CARPETA ASFALTICA TRAMO 1","partidas":[{"id":214,"nombre":"URBA - PAVIMENTO ASFALTO TRAMO 1 - RECTIFICACIÓN CANCHA","tipo":"pct","inc":0.005442223032723695},{"id":215,"nombre":"URBA - PAVIMENTO ASFALTO TRAMO 1 - IMPRIMACIÓN","tipo":"pct","inc":0.004213616678469687},{"id":216,"nombre":"URBA - PAVIMENTO ASFALTO TRAMO 1 - ASFALTADO","tipo":"pct","inc":0.05071239633666164}]},{"titulo":"CARPETA ASFALTICA TRAMO 2","partidas":[{"id":217,"nombre":"URBA - PAVIMENTO ASFALTO TRAMO 2 - RECTIFICACIÓN CANCHA","tipo":"pct","inc":0.005442223032723695},{"id":218,"nombre":"URBA - PAVIMENTO ASFALTO TRAMO 2 - IMPRIMACIÓN","tipo":"pct","inc":0.004213616678469687},{"id":219,"nombre":"URBA - PAVIMENTO ASFALTO TRAMO 2 - ASFALTADO","tipo":"pct","inc":0.05071239633666164}]},{"titulo":"POSTACION SECTOR 1","partidas":[{"id":220,"nombre":"URBA - POSTACIÓN SECTOR 1 - EXCAVACIÓN","tipo":"pct","inc":0.003940816356893256},{"id":221,"nombre":"URBA - POSTACIÓN SECTOR 1 - INSTALACIÓN DE POSTE","tipo":"pct","inc":0.03546734721203931}]},{"titulo":"LUMINARIA + CABLEADO","partidas":[{"id":222,"nombre":"URBA - LUMINARIA + CABLEADO","tipo":"pct","inc":0.05636461082566397}]}]},{"id":"EQ","titulo":"EQUIPAMIENTO","sections":[{"titulo":"LOCAL COMERCIAL A/1","partidas":[{"id":223,"nombre":"LOCAL COMERCIAL A/1 - OBRA GRUESA","tipo":"pct","inc":0.016319821036751437},{"id":224,"nombre":"LOCAL COMERCIAL A/1 - TERMINACIONES GRUESAS","tipo":"pct","inc":0.006994209015750616},{"id":225,"nombre":"LOCAL COMERCIAL A/1 - TERMINACIONES FINAS","tipo":"pct","inc":0.009325612021000821},{"id":226,"nombre":"LOCAL COMERCIAL A/1 - FACHADAS","tipo":"pct","inc":0.006994209015750616},{"id":227,"nombre":"LOCAL COMERCIAL A/1 - EXTERIORES (PATIOS)","tipo":"pct","inc":0.004662806010500411},{"id":228,"nombre":"LOCAL COMERCIAL A/1 - ENTREGA","tipo":"pct","inc":0.0023314030052502053}]},{"titulo":"LOCAL COMERCIAL A/2","partidas":[{"id":229,"nombre":"LOCAL COMERCIAL A/2 - OBRA GRUESA","tipo":"pct","inc":0.016319821036751437},{"id":230,"nombre":"LOCAL COMERCIAL A/2 - TERMINACIONES GRUESAS","tipo":"pct","inc":0.006994209015750616},{"id":231,"nombre":"LOCAL COMERCIAL A/2 - TERMINACIONES FINAS","tipo":"pct","inc":0.009325612021000821},{"id":232,"nombre":"LOCAL COMERCIAL A/2 - FACHADAS","tipo":"pct","inc":0.006994209015750616},{"id":233,"nombre":"LOCAL COMERCIAL A/2 - EXTERIORES (PATIOS)","tipo":"pct","inc":0.004662806010500411},{"id":234,"nombre":"LOCAL COMERCIAL A/2 - ENTREGA","tipo":"pct","inc":0.0023314030052502053}]},{"titulo":"CASA MINUSVALIDO","partidas":[{"id":235,"nombre":"CASA MINUSVALIDO - OBRA GRUESA","tipo":"pct","inc":0.021816198198102266},{"id":236,"nombre":"CASA MINUSVALIDO - TERMINACIONES GRUESAS","tipo":"pct","inc":0.014544132132068177},{"id":237,"nombre":"CASA MINUSVALIDO - TERMINACIONES FINAS","tipo":"pct","inc":0.04363239639620453},{"id":238,"nombre":"CASA MINUSVALIDO - FACHADAS","tipo":"pct","inc":0.014544132132068177},{"id":239,"nombre":"CASA MINUSVALIDO - EXTERIORES (PATIOS)","tipo":"pct","inc":0.04363239639620453},{"id":240,"nombre":"CASA MINUSVALIDO - ENTREGA","tipo":"pct","inc":0.0072720660660340886}]},{"titulo":"SALA MULTIUSO","partidas":[{"id":241,"nombre":"SALA MULTIUSO - OBRA GRUESA","tipo":"pct","inc":0.05043039863888945},{"id":242,"nombre":"SALA MULTIUSO - TERMINACIONES GRUESAS","tipo":"pct","inc":0.03025823918333367},{"id":243,"nombre":"SALA MULTIUSO - TERMINACIONES FINAS","tipo":"pct","inc":0.06051647836666734},{"id":244,"nombre":"SALA MULTIUSO - FACHADAS","tipo":"pct","inc":0.03025823918333367},{"id":245,"nombre":"SALA MULTIUSO - EXTERIORES (PATIOS)","tipo":"pct","inc":0.02017215945555578},{"id":246,"nombre":"SALA MULTIUSO - ENTREGA","tipo":"pct","inc":0.01008607972777789}]},{"titulo":"AREAS VERDES","partidas":[{"id":247,"nombre":"ÁREAS VERDES - TRAZADO Y NIVELES","tipo":"pct","inc":0.003164444575148842},{"id":248,"nombre":"ÁREAS VERDES - PREPARACIÓN DE CANCHA","tipo":"pct","inc":0.028480001176339576},{"id":249,"nombre":"ÁREAS VERDES - SOLERILLAS Á.VERDE","tipo":"pct","inc":0.010934385065408635},{"id":250,"nombre":"ÁREAS VERDES - PAVIMENTOS","tipo":"pct","inc":0.06244922884040654},{"id":251,"nombre":"ÁREAS VERDES - SENDERO MAICILLO","tipo":"pct","inc":0.003605129116828615},{"id":252,"nombre":"ÁREAS VERDES - EQUIPAMIENTO","tipo":"pct","inc":0.132712285818783},{"id":253,"nombre":"ÁREAS VERDES - INSTALACIÓN ÁRBOLES","tipo":"pct","inc":0.04183336970548301},{"id":254,"nombre":"ÁREAS VERDES - INSTALACIÓN CUBRESUELOS","tipo":"pct","inc":0.009861552106014153},{"id":255,"nombre":"ÁREAS VERDES - ASEO Y LIMPIEZA","tipo":"pct","inc":0.03629019580835549}]},{"titulo":"SENALETICA","partidas":[{"id":256,"nombre":"SEÑALÉTICA - PINTURA DEMARCACIONES","tipo":"pct","inc":0.05804446670857906},{"id":257,"nombre":"SEÑALÉTICA - SEÑALÉTICAS VERTICALES","tipo":"pct","inc":0.09674077784763177},{"id":258,"nombre":"SEÑALÉTICA - CERTIFICADO","tipo":"pct","inc":0.03869631113905272}]},{"titulo":"SALA DE RECICLAJE","partidas":[{"id":259,"nombre":"SALA RECICLAJE - OBRA GRUESA","tipo":"pct","inc":0.01838440800286038},{"id":260,"nombre":"SALA RECICLAJE - TERMINACIONES GRUESAS","tipo":"pct","inc":0.00919220400143019},{"id":261,"nombre":"SALA RECICLAJE - TERMINACIONES FINAS","tipo":"pct","inc":0.005515322400858115},{"id":262,"nombre":"SALA RECICLAJE - ENTREGA","tipo":"pct","inc":0.003676881600572077}]}]}];
+var MANZANAS = {"A1":{"1":"sm2","2":"sm2","3":"sm1","4":"sm1","5":"v","6":"v","7":"sm1","8":"sm1","9":"v","10":"v","11":"v","12":"v","13":"v","14":"v","15":"sm1","16":"sm1","17":"sm1","18":"sm1","19":"sm2","20":"sm2"},"A2":{"1":"v","2":"v","3":"sm1","4":"sm1","5":"sm1","6":"sm1","7":"sm2","8":"sm2","9":"sm1","10":"sm1","11":"sm1","12":"sm1","13":"sm1","14":"sm1","15":"v","16":"v","17":"v","18":"v","19":"e","20":"e","21":"v","22":"v","23":"sm1","24":"sm1","25":"sm1","26":"sm1","27":"sm1","28":"sm1","29":"sm1","30":"sm1","31":"sm2","32":"sm2"},"A3":{"1":"sm2","2":"sm2","3":"v","4":"v","5":"e","6":"e","7":"v","8":"v","9":"sm1","10":"sm1","11":"v","12":"v","13":"sm2","14":"sm2","15":"v","16":"v","17":"e","18":"e","19":"v","20":"v","21":"sm1","22":"sm1","23":"sm2","24":"sm2"},"A4":{"1":"v","2":"v"},"A5":{"1":"sm2","2":"sm2","3":"sm1","4":"sm1","5":"sm1","6":"sm1","7":"sm2","8":"sm2"},"A6":{"1":"v","2":"v","3":"e","4":"e","5":"sm2","6":"sm2","7":"v","8":"v","9":"e","10":"e","11":"v","12":"v","13":"sm1","14":"sm1","15":"sm2","16":"sm2","17":"e","18":"e","19":"v","20":"v","21":"e","22":"e","23":"sm1","24":"sm1","25":"sm1","26":"sm1","27":"v","28":"v","29":"sm1","30":"sm1","31":"sm2","32":"sm2","33":"v","34":"v","35":"v","36":"v","37":"sm1","38":"sm1","39":"v","40":"v","41":"v","42":"v","43":"sm1","44":"sm1"},"A7":{"1":"sm2","2":"sm2","3":"sm1","4":"sm1","5":"sm1","6":"sm1","7":"sm1","8":"sm1","9":"sm1","10":"sm1","11":"e","12":"e","13":"e","14":"e","15":"sm1","16":"sm1","17":"sm1","18":"sm1","19":"e","20":"e"},"A8":{"1":"sm2","2":"sm2","3":"sm2","4":"sm2","5":"v","6":"v","7":"sm2","8":"sm2","9":"vmr","10":"vmr","11":"e","12":"e","13":"sm1","14":"sm1","15":"sm2","16":"sm2"},"A9":{"1":"sm2","2":"sm2","3":"sm2","4":"sm2","5":"e","6":"e","7":"sm1","8":"sm1","9":"sm2","10":"sm2","11":"sm2","12":"sm2","13":"e","14":"v","15":"sm1","16":"sm1"},"A10":{"1":"sm2","2":"sm2","3":"sm2","4":"sm2","5":"e","6":"e","7":"e","8":"e","9":"sm2","10":"sm2","11":"sm2","12":"sm2","13":"e","14":"e","15":"e","16":"e"},"A11":{"1":"e","2":"v","3":"v","4":"e","5":"v","6":"v","7":"sm2","8":"sm2","9":"sm2","10":"sm2","11":"v","12":"v","13":"sm1","14":"sm1","15":"sm2","16":"sm2","17":"sm2","18":"sm2","19":"e","20":"e","21":"sm1","22":"sm1","23":"sm2","24":"sm2","25":"sm2","26":"sm2","27":"e","28":"v","29":"v","30":"e","31":"sm2","32":"sm2","33":"sm2","34":"sm2","35":"sm1","36":"sm1","37":"e","38":"e","39":"sm2","40":"sm2","41":"sm2","42":"sm2","43":"sm1","44":"sm1","45":"v","46":"v","47":"sm2","48":"sm2","49":"sm2","50":"sm2","51":"v","52":"v"},"A12":{"1":"e","2":"v","3":"v","4":"e","5":"v","6":"v","7":"sm1","8":"sm1","9":"sm2","10":"sm2","11":"v","12":"v","13":"sm1","14":"sm1","15":"sm2","16":"sm2","17":"sm2","18":"sm2","19":"sm1","20":"sm1","21":"v","22":"v","23":"sm2","24":"sm2","25":"sm2","26":"sm2","27":"v","28":"v","29":"sm1","30":"sm1","31":"sm2","32":"sm2","33":"sm2","34":"sm2","35":"sm1","36":"sm1","37":"v","38":"v","39":"sm2","40":"sm2","41":"sm1","42":"sm1","43":"v","44":"v"},"B2":{"1":"e","2":"e"}};
+var MZ_ORDER = ['A1','A2','A3','A4','A5','A6','A7','A8','A9','A10','A11','A12','B2'];
+
+// ---- CONFIG ----
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOkcP4T1PmNpUbXFbfxUZgTUztBPAJNe-XE2vBO5O1v4OSn9b3giXNY-vJ01GaXOlo/exec';
+var CURRENT_SEMANA = '';
+
+var DATA = {jt:{}, cal:{}};
+var ROLE = null;
+var MODAL_PID = null;
+var MODAL_BUILT = false;
+var MODAL_SEL = [];
+
+// ---- INIT: carga semana actual ----
+(function initSemana() {
+  var hoy = new Date();
+  var dd = String(hoy.getDate()).padStart(2,'0');
+  var mm = String(hoy.getMonth()+1).padStart(2,'0');
+  var yy = hoy.getFullYear();
+  CURRENT_SEMANA = dd + '/' + mm + '/' + yy;
+  document.getElementById('week-pill').textContent = '📅 ' + CURRENT_SEMANA;
+  fetch(SCRIPT_URL + '?action=getSemanaActual&_=' + Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d && d.ok && d.semana) {
+        CURRENT_SEMANA = d.semana;
+        document.getElementById('week-pill').textContent = '📅 ' + d.semana;
+      }
+    })
+    .catch(function(){});
+})();
+
+// ---- HELPERS ----
+function hasVal(role, pid) {
+  var v = DATA[role][pid];
+  if (v === undefined || v === null) return false;
+  return Array.isArray(v) ? v.length > 0 : true;
+}
+function getPartidas(ch) {
+  var r = [];
+  (ch.groups || []).forEach(function(g) {
+    (g.sections || []).forEach(function(s) { r = r.concat(s.partidas || []); });
+    r = r.concat(g.partidas || []);
+  });
+  (ch.sections || []).forEach(function(s) { r = r.concat(s.partidas || []); });
+  r = r.concat(ch.partidas || []);
+  return r;
+}
+function countFilled(partidas, role) {
+  return partidas.filter(function(p) { return hasVal(role, p.id); }).length;
+}
+
+// ---- SCREENS ----
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+}
+
+// ---- ROLE ----
+function enterAs(role) {
+  ROLE = role;
+  var rb = document.getElementById('role-badge');
+  if (role === 'jt')  { rb.textContent = '👷 Jefe de Terreno'; rb.className = 'role-badge rb-jt'; }
+  else if (role === 'cal') { rb.textContent = '📋 Calidad'; rb.className = 'role-badge rb-cal'; }
+  else { rb.textContent = '🔍 Comparacion'; rb.className = 'role-badge rb-gaby'; }
+  rb.style.display = '';
+  document.getElementById('btn-logout').style.display = '';
+  document.getElementById('prog-wrap').style.display = '';
+  document.getElementById('bottom-bar').style.display = '';
+  var navAudit = document.getElementById('btn-nav-audit');
+  var navCmp = document.getElementById('btn-nav-cmp');
+  if (role === 'gaby') { navAudit.style.display = 'none'; navCmp.style.display = ''; }
+  else { navAudit.style.display = ''; navCmp.style.display = 'none'; }
+
+  var st = document.getElementById('save-st');
+  st.textContent = 'Cargando datos...'; st.style.color = '#8899bb';
+  var sem = CURRENT_SEMANA || '';
+
+  var loaded = false;
+  function doLoad() {
+    if (loaded) return; loaded = true;
+    afterLoad(role);
+  }
+  var timeout = setTimeout(function() {
+    st.textContent = 'Sin conexion — datos locales';
+    st.style.color = '#cc8822';
+    doLoad();
+  }, 6000);
+
+  fetch(SCRIPT_URL + '?action=getAuditSemana&semana=' + encodeURIComponent(sem) + '&_=' + Date.now())
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      clearTimeout(timeout);
+      if (d && d.ok) {
+        if (d.jt)  DATA.jt  = normalizeData(d.jt);
+        if (d.cal) DATA.cal = normalizeData(d.cal);
+      }
+      st.textContent = sem ? 'Datos semana ' + sem + ' cargados' : 'Sin semana activa';
+      st.style.color = '#1a9b5a';
+      doLoad();
+    })
+    .catch(function(){
+      clearTimeout(timeout);
+      st.textContent = 'Sin conexion — datos locales';
+      st.style.color = '#cc8822';
+      doLoad();
+    });
+}
+
+function normalizeData(obj) {
+  var out = {};
+  Object.keys(obj).forEach(function(k) {
+    var v = obj[k];
+    out[parseInt(k)] = v;
+  });
+  return out;
+}
+
+function afterLoad(role) {
+  if (role === 'gaby') {
+    showCompare();
+  } else {
+    renderAudit();
+    showScreen('sc-audit');
+    updateProgress();
+    setTimeout(function() {
+      var firstCh = document.querySelector('.ch-body');
+      var firstArr = document.querySelector('.ch-arr');
+      if (firstCh) { firstCh.classList.add('open'); firstArr.classList.add('open'); }
+      var firstGrp = document.querySelector('.grp-body');
+      var firstGArr = document.querySelector('.grp-arr');
+      if (firstGrp) { firstGrp.classList.add('open'); firstGArr.classList.add('open'); }
+      var firstSec = document.querySelector('.sec-body');
+      var firstSArr = document.querySelector('.sec-arr');
+      if (firstSec) { firstSec.classList.add('open'); firstSArr.classList.add('open'); }
+    }, 10);
+  }
+}
+
+// ---- PINS ----
+// JT: 0925 · CAL: 1472 · GABY (comparacion): 0525
+var PINS = { jt: '0925', cal: '1472', gaby: '0525' };
+var PENDING_ROLE = null;
+
+function goToPin(role) {
+  PENDING_ROLE = role;
+  var labels = { jt: '👷 Jefe de Terreno', cal: '📋 Calidad', gaby: '🔍 Comparacion' };
+  document.getElementById('pin-title').textContent = labels[role];
+  var sem = CURRENT_SEMANA ? 'Semana ' + CURRENT_SEMANA : 'Ingresa tu PIN de acceso';
+  document.getElementById('pin-semana').textContent = sem;
+  document.getElementById('pin-input').value = '';
+  document.getElementById('pin-error').textContent = '';
+  showScreen('sc-pin');
+  setTimeout(function() { document.getElementById('pin-input').focus(); }, 100);
+}
+
+function checkPin() {
+  var entered = document.getElementById('pin-input').value;
+  if (entered === PINS[PENDING_ROLE]) {
+    document.getElementById('pin-error').textContent = '';
+    enterAs(PENDING_ROLE);
+  } else {
+    document.getElementById('pin-error').textContent = 'PIN incorrecto. Intenta nuevamente.';
+    document.getElementById('pin-input').value = '';
+    document.getElementById('pin-input').focus();
+  }
+}
+
+document.getElementById('btn-jt').addEventListener('click', function() { goToPin('jt'); });
+document.getElementById('btn-cal').addEventListener('click', function() { goToPin('cal'); });
+document.getElementById('btn-gaby').addEventListener('click', function() { goToPin('gaby'); });
+document.getElementById('pin-confirm').addEventListener('click', checkPin);
+document.getElementById('pin-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') checkPin();
+});
+document.getElementById('pin-back').addEventListener('click', function() { showScreen('sc-login'); });
+document.getElementById('btn-logout').addEventListener('click', function() {
+  ROLE = null;
+  document.getElementById('role-badge').style.display = 'none';
+  document.getElementById('btn-logout').style.display = 'none';
+  document.getElementById('prog-wrap').style.display = 'none';
+  document.getElementById('bottom-bar').style.display = 'none';
+  showScreen('sc-login');
+});
+document.getElementById('btn-nav-audit').addEventListener('click', function() {
+  showScreen('sc-audit');
+  document.getElementById('btn-nav-audit').classList.add('active');
+  document.getElementById('btn-nav-cmp').classList.remove('active');
+});
+document.getElementById('btn-nav-cmp').addEventListener('click', function() {
+  showCompare();
+});
+document.getElementById('save-btn').addEventListener('click', doSave);
+document.getElementById('modal-x').addEventListener('click', closeModal);
+document.getElementById('modal-confirm').addEventListener('click', confirmModal);
+
+// ---- RENDER AUDIT ----
+function renderAudit() {
+  var con = document.getElementById('audit-container');
+  con.innerHTML = '';
+  CHAPTERS.forEach(function(ch, ci) {
+    con.appendChild(buildChapter(ch, ci));
+  });
+}
+
+function makeEl(tag, cls, id) {
+  var e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (id) e.id = id;
+  return e;
+}
+
+function buildChapter(ch, ci) {
+  var allP = getPartidas(ch);
+  var filled = countFilled(allP, ROLE);
+  var pct = allP.length ? Math.round(filled / allP.length * 100) : 0;
+
+  var div = makeEl('div', 'chapter');
+  var hdr = makeEl('div', 'ch-hdr');
+  var arr = makeEl('span', 'ch-arr');
+  arr.textContent = '▶'; hdr.appendChild(arr);
+  var nm = makeEl('span', 'ch-name'); nm.textContent = ch.titulo; hdr.appendChild(nm);
+  var st = makeEl('span', 'ch-stats', 'ch-st-' + ci); st.textContent = filled + '/' + allP.length; hdr.appendChild(st);
+  var bar = makeEl('div', 'ch-bar'); var bf = makeEl('div', 'ch-bar-fill'); bf.id = 'ch-bf-' + ci; bf.style.width = pct + '%'; bar.appendChild(bf); hdr.appendChild(bar);
+
+  var body = makeEl('div', 'ch-body', 'ch-body-' + ci);
+  hdr.addEventListener('click', function() { toggle(body, arr); });
+
+  if (ch.groups) {
+    ch.groups.forEach(function(g, gi) { body.appendChild(buildGroup(g, ci, gi)); });
+  } else {
+    (ch.sections || []).forEach(function(s, si) { body.appendChild(buildSection(s, ci, -1, si)); });
+    (ch.partidas || []).forEach(function(p) { body.appendChild(buildPartidaRow(p, true)); });
+  }
+  div.appendChild(hdr); div.appendChild(body);
+  return div;
+}
+
+function buildGroup(g, ci, gi) {
+  var allP = [];
+  (g.sections || []).forEach(function(s) { allP = allP.concat(s.partidas || []); });
+  allP = allP.concat(g.partidas || []);
+  var filled = countFilled(allP, ROLE);
+  var pct = allP.length ? Math.round(filled / allP.length * 100) : 0;
+
+  var div = makeEl('div', 'group');
+  var hdr = makeEl('div', 'grp-hdr');
+  var arr = makeEl('span', 'grp-arr'); arr.textContent = '▶'; hdr.appendChild(arr);
+  var nm = makeEl('span', 'grp-name'); nm.textContent = g.titulo; hdr.appendChild(nm);
+  var st = makeEl('span', 'grp-stats', 'grp-st-' + ci + '-' + gi); st.textContent = filled + '/' + allP.length; hdr.appendChild(st);
+  var bar = makeEl('div', 'grp-bar'); var bf = makeEl('div', 'grp-bar-fill'); bf.id = 'grp-bf-' + ci + '-' + gi; bf.style.width = pct + '%'; bar.appendChild(bf); hdr.appendChild(bar);
+
+  var body = makeEl('div', 'grp-body', 'grp-body-' + ci + '-' + gi);
+  hdr.addEventListener('click', function() { toggle(body, arr); });
+
+  (g.sections || []).forEach(function(s, si) { body.appendChild(buildSection(s, ci, gi, si)); });
+  (g.partidas || []).forEach(function(p) { body.appendChild(buildPartidaRow(p, true)); });
+
+  div.appendChild(hdr); div.appendChild(body);
+  return div;
+}
+
+function buildSection(s, ci, gi, si) {
+  var partidas = s.partidas || [];
+  var filled = countFilled(partidas, ROLE);
+  var pct = partidas.length ? Math.round(filled / partidas.length * 100) : 0;
+  var key = ci + '-' + gi + '-' + si;
+
+  var div = makeEl('div', 'section');
+  var hdr = makeEl('div', 'sec-hdr');
+  var arr = makeEl('span', 'sec-arr'); arr.textContent = '▶'; hdr.appendChild(arr);
+  var nm = makeEl('span', 'sec-name'); nm.textContent = s.titulo; hdr.appendChild(nm);
+  var cnt = makeEl('span', 'sec-count', 'sec-st-' + key); cnt.textContent = filled + '/' + partidas.length; hdr.appendChild(cnt);
+  var bar = makeEl('div', 'sec-bar'); var bf = makeEl('div', 'sec-bar-fill'); bf.id = 'sec-bf-' + key; bf.style.width = pct + '%'; bar.appendChild(bf); hdr.appendChild(bar);
+
+  var body = makeEl('div', 'sec-body', 'sec-body-' + key);
+  hdr.addEventListener('click', function() { toggle(body, arr); });
+  partidas.forEach(function(p) { body.appendChild(buildPartidaRow(p, false)); });
+
+  div.appendChild(hdr); div.appendChild(body);
+  return div;
+}
+
+function buildPartidaRow(p, isDirect) {
+  var val = DATA[ROLE] ? DATA[ROLE][p.id] : undefined;
+  var filled = hasVal(ROLE, p.id);
+
+  var row = makeEl('div', 'p-row' + (filled ? ' filled' : '') + (isDirect ? ' direct' : ''));
+  row.id = 'row-' + p.id;
+
+  var dot = makeEl('span', 'p-dot ' + (filled ? 'done' : 'empty')); row.appendChild(dot);
+  var num = makeEl('span', 'p-num'); num.textContent = p.id; row.appendChild(num);
+  var nm = makeEl('span', 'p-name'); nm.textContent = p.nombre; row.appendChild(nm);
+  var inc = makeEl('span', 'p-inc'); inc.textContent = (p.inc * 100).toFixed(2) + '%'; row.appendChild(inc);
+
+  var inp = makeEl('div', 'p-inp'); row.appendChild(inp);
+
+  if (p.tipo === 'viv') {
+    var cnt = Array.isArray(val) ? val.length : 0;
+    var btn = makeEl('button', 'viv-btn' + (cnt > 0 ? ' filled' : ''));
+    btn.id = 'vb-' + p.id;
+    btn.innerHTML = '&#127968; Loteo' + (cnt > 0 ? '<span class="viv-cnt">' + cnt + '</span>' : '');
+    btn.addEventListener('click', function() { openModal(p.id, p.nombre); });
+    inp.appendChild(btn);
+  } else {
+    var wrap = makeEl('div', 'pct-wrap');
+    var input = makeEl('input');
+    input.type = 'number'; input.min = 0; input.max = 100;
+    input.className = 'pct-input' + (val !== undefined && val !== null ? ' filled' : '');
+    input.id = 'pi-' + p.id;
+    if (val !== undefined && val !== null) input.value = val;
+    input.placeholder = '—';
+    input.addEventListener('input', function() { onPct(p.id, input); });
+    input.addEventListener('focus', function() { input.select(); });
+    var sym = makeEl('span', 'pct-sym'); sym.textContent = '%';
+    wrap.appendChild(input); wrap.appendChild(sym);
+    inp.appendChild(wrap);
+  }
+  return row;
+}
+
+function toggle(body, arr) {
+  var open = body.classList.contains('open');
+  body.classList.toggle('open', !open);
+  arr.classList.toggle('open', !open);
+}
+
+// ---- PCT INPUT ----
+function onPct(pid, input) {
+  var v = parseFloat(input.value);
+  if (!isNaN(v) && v >= 0 && v <= 100) {
+    DATA[ROLE][pid] = v;
+    input.classList.add('filled');
+    setFilled(pid, true);
+  } else if (input.value === '') {
+    delete DATA[ROLE][pid];
+    input.classList.remove('filled');
+    setFilled(pid, false);
+  }
+  refreshProgress();
+}
+
+function setFilled(pid, filled) {
+  var row = document.getElementById('row-' + pid);
+  if (!row) return;
+  row.classList.toggle('filled', filled);
+  var dot = row.querySelector('.p-dot');
+  if (dot) { dot.className = 'p-dot ' + (filled ? 'done' : 'empty'); }
+}
+
+function refreshProgress() {
+  CHAPTERS.forEach(function(ch, ci) {
+    var allP = getPartidas(ch);
+    var filled = countFilled(allP, ROLE);
+    var pct = allP.length ? Math.round(filled / allP.length * 100) : 0;
+    var bf = document.getElementById('ch-bf-' + ci);
+    var st = document.getElementById('ch-st-' + ci);
+    if (bf) bf.style.width = pct + '%';
+    if (st) st.textContent = filled + '/' + allP.length;
+
+    if (ch.groups) {
+      ch.groups.forEach(function(g, gi) {
+        var gP = [];
+        (g.sections || []).forEach(function(s) { gP = gP.concat(s.partidas || []); });
+        gP = gP.concat(g.partidas || []);
+        var gf = countFilled(gP, ROLE);
+        var gpct = gP.length ? Math.round(gf / gP.length * 100) : 0;
+        var gbf = document.getElementById('grp-bf-' + ci + '-' + gi);
+        var gst = document.getElementById('grp-st-' + ci + '-' + gi);
+        if (gbf) gbf.style.width = gpct + '%';
+        if (gst) gst.textContent = gf + '/' + gP.length;
+
+        (g.sections || []).forEach(function(s, si) {
+          var sp = s.partidas || [];
+          var sf = countFilled(sp, ROLE);
+          var spct = sp.length ? Math.round(sf / sp.length * 100) : 0;
+          var key = ci + '-' + gi + '-' + si;
+          var sbf = document.getElementById('sec-bf-' + key);
+          var sst = document.getElementById('sec-st-' + key);
+          if (sbf) sbf.style.width = spct + '%';
+          if (sst) sst.textContent = sf + '/' + sp.length;
+        });
+      });
+    } else {
+      (ch.sections || []).forEach(function(s, si) {
+        var sp = s.partidas || [];
+        var sf = countFilled(sp, ROLE);
+        var spct = sp.length ? Math.round(sf / sp.length * 100) : 0;
+        var key = ci + '--1-' + si;
+        var sbf = document.getElementById('sec-bf-' + key);
+        var sst = document.getElementById('sec-st-' + key);
+        if (sbf) sbf.style.width = spct + '%';
+        if (sst) sst.textContent = sf + '/' + sp.length;
+      });
+    }
+  });
+  updateProgress();
+}
+
+function updateProgress() {
+  var all = [];
+  CHAPTERS.forEach(function(ch) { all = all.concat(getPartidas(ch)); });
+  var filled = countFilled(all, ROLE);
+  var pct = all.length ? Math.round(filled / all.length * 100) : 0;
+  document.getElementById('prog-txt').textContent = filled + ' / ' + all.length + ' partidas';
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-pct').textContent = pct + '%';
+}
+
+// ---- MODAL ----
+function buildModalDOM() {
+  var body = document.getElementById('modal-body');
+  body.innerHTML = '';
+  // fila 1: por tipo
+  var qb = makeEl('div', 'quick-bar');
+  var lbl = makeEl('span', 'qb-lbl'); lbl.textContent = 'Tipo:'; qb.appendChild(lbl);
+  [['sm1','SM1'],['sm2','SM2'],['v','V'],['e','E'],['vmr','VMR'],['all','Todas'],['none','Ninguna']].forEach(function(pair) {
+    var chip = makeEl('button', 'qchip ' + pair[0]); chip.textContent = pair[1];
+    chip.addEventListener('click', function() {
+      if (pair[0] === 'all') selAll();
+      else if (pair[0] === 'none') selNone();
+      else selByTipo(pair[0]);
+    });
+    qb.appendChild(chip);
+  });
+  body.appendChild(qb);
+  // fila 2: por manzana
+  var qb2 = makeEl('div', 'quick-bar');
+  qb2.style.marginTop = '-4px';
+  var lbl2 = makeEl('span', 'qb-lbl'); lbl2.textContent = 'Manzana:'; qb2.appendChild(lbl2);
+  MZ_ORDER.forEach(function(mz) {
+    var chip = makeEl('button', 'qchip mz'); chip.textContent = 'Mz ' + mz; chip.id = 'mzchip-' + mz;
+    chip.addEventListener('click', function() { selByManzana(mz); });
+    qb2.appendChild(chip);
+  });
+  body.appendChild(qb2);
+  // manzanas — built ONCE, selection synced separately
+  MZ_ORDER.forEach(function(mz) {
+    var mzData = MANZANAS[mz];
+    var wrap = makeEl('div', 'mz-wrap');
+    var lbl2 = makeEl('div', 'mz-lbl');
+    lbl2.appendChild(document.createTextNode('Manzana '));
+    var badge = makeEl('span', 'mz-badge'); badge.textContent = mz; lbl2.appendChild(badge);
+    wrap.appendChild(lbl2);
+    var grid = makeEl('div', 'lotes-grid');
+    Object.keys(mzData).sort(function(a,b){return parseInt(a)-parseInt(b);}).forEach(function(k) {
+      var key = mz + '-' + k;
+      var tipo = mzData[k];
+      var cell = makeEl('div', 'lote ' + tipo);
+      cell.id = 'lc-' + key;
+      cell.textContent = k;
+      cell.addEventListener('click', function() { toggleLote(key); });
+      grid.appendChild(cell);
+    });
+    wrap.appendChild(grid);
+    body.appendChild(wrap);
+  });
+  MODAL_BUILT = true;
+}
+
+function syncModalSel() {
+  document.querySelectorAll('#modal-body .lote').forEach(function(c) { c.classList.remove('sel'); });
+  MODAL_SEL.forEach(function(n) {
+    var c = document.getElementById('lc-' + n);
+    if (c) c.classList.add('sel');
+  });
+  document.getElementById('modal-n').textContent = MODAL_SEL.length;
+}
+
+function openModal(pid, nombre) {
+  MODAL_PID = pid;
+  var existing = (DATA[ROLE] && DATA[ROLE][pid]) ? DATA[ROLE][pid] : [];
+  MODAL_SEL = existing.slice();
+  document.getElementById('modal-sub').textContent = nombre;
+  if (!MODAL_BUILT) buildModalDOM();
+  syncModalSel();
+  document.getElementById('modal').classList.add('open');
+}
+
+function toggleLote(n) {
+  var idx = MODAL_SEL.indexOf(n);
+  if (idx >= 0) MODAL_SEL.splice(idx, 1); else MODAL_SEL.push(n);
+  var c = document.getElementById('lc-' + n);
+  if (c) c.classList.toggle('sel', idx < 0);
+  document.getElementById('modal-n').textContent = MODAL_SEL.length;
+}
+function selByTipo(tipo) {
+  Object.keys(MANZANAS).forEach(function(mz) {
+    Object.keys(MANZANAS[mz]).forEach(function(k) {
+      if (MANZANAS[mz][k] === tipo) {
+        var key = mz + '-' + k;
+        if (MODAL_SEL.indexOf(key) < 0) { MODAL_SEL.push(key); }
+        var c = document.getElementById('lc-' + key);
+        if (c) c.classList.add('sel');
+      }
+    });
+  });
+  document.getElementById('modal-n').textContent = MODAL_SEL.length;
+}
+function selByManzana(mz) {
+  var keys = Object.keys(MANZANAS[mz] || {}).map(function(k){ return mz + '-' + k; });
+  var allSel = keys.every(function(key){ return MODAL_SEL.indexOf(key) >= 0; });
+  keys.forEach(function(key) {
+    var idx = MODAL_SEL.indexOf(key);
+    if (allSel) { if (idx >= 0) MODAL_SEL.splice(idx, 1); }
+    else        { if (idx < 0) MODAL_SEL.push(key); }
+  });
+  MZ_ORDER.forEach(function(m) {
+    var chip = document.getElementById('mzchip-' + m);
+    if (!chip) return;
+    var mKeys = Object.keys(MANZANAS[m]||{}).map(function(k){ return m + '-' + k; });
+    var mAll = mKeys.every(function(key){ return MODAL_SEL.indexOf(key) >= 0; });
+    chip.classList.toggle('active', mAll);
+  });
+  syncModalSel();
+}
+function selAll() {
+  MODAL_SEL = [];
+  Object.keys(MANZANAS).forEach(function(mz) {
+    Object.keys(MANZANAS[mz]).forEach(function(k) { MODAL_SEL.push(mz + '-' + k); });
+  });
+  document.querySelectorAll('.lote').forEach(function(c) { c.classList.add('sel'); });
+  MZ_ORDER.forEach(function(m) {
+    var chip = document.getElementById('mzchip-' + m); if (chip) chip.classList.add('active');
+  });
+  document.getElementById('modal-n').textContent = MODAL_SEL.length;
+}
+function selNone() {
+  MODAL_SEL = [];
+  document.querySelectorAll('.lote').forEach(function(c) { c.classList.remove('sel'); });
+  MZ_ORDER.forEach(function(m) {
+    var chip = document.getElementById('mzchip-' + m); if (chip) chip.classList.remove('active');
+  });
+  document.getElementById('modal-n').textContent = 0;
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function confirmModal() {
+  var pid = MODAL_PID;
+  DATA[ROLE][pid] = MODAL_SEL.slice();
+  var cnt = MODAL_SEL.length;
+  var btn = document.getElementById('vb-' + pid);
+  if (btn) {
+    btn.className = 'viv-btn' + (cnt > 0 ? ' filled' : '');
+    var span = btn.querySelector('.viv-cnt');
+    if (span) span.textContent = cnt > 0 ? cnt : '';
+  }
+  setFilled(pid, cnt > 0);
+  refreshProgress();
+  closeModal();
+}
+
+// ---- GUARDAR EN SHEET ----
+function doSave() {
+  if (!CURRENT_SEMANA) {
+    alert('No hay semana activa. Espera a que cargue o vuelve a intentar.');
+    return;
+  }
+  var st = document.getElementById('save-st');
+  st.textContent = 'Guardando...'; st.style.color = '#8899bb';
+  var saveUrl = SCRIPT_URL
+    + '?action=saveAuditData'
+    + '&semana=' + encodeURIComponent(CURRENT_SEMANA)
+    + '&rol='    + encodeURIComponent(ROLE)
+    + '&datos='  + encodeURIComponent(JSON.stringify(DATA[ROLE]))
+    + '&_='      + Date.now();
+  fetch(saveUrl)
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if (d && d.ok) {
+        st.textContent = '✓ Guardado ' + new Date().toLocaleTimeString('es-CL', {hour:'2-digit',minute:'2-digit'});
+        st.style.color = '#1a9b5a';
+      } else {
+        st.textContent = '⚠ Error: ' + (d && d.error ? d.error : JSON.stringify(d));
+        st.style.color = '#cc4422';
+      }
+    })
+    .catch(function(err){
+      st.textContent = '⚠ Error: ' + (err && err.message ? err.message.slice(0,50) : 'red');
+      st.style.color = '#cc4422';
+    });
+}
+
+// ---- COMPARACION ----
+function showCompare() {
+  document.getElementById('btn-nav-audit').classList.remove('active');
+  document.getElementById('btn-nav-cmp').classList.add('active');
+  showScreen('sc-compare');
+  var con = document.getElementById('cmp-container');
+  con.innerHTML = '';
+
+  var allP = [];
+  CHAPTERS.forEach(function(ch) { allP = allP.concat(getPartidas(ch)); });
+
+  var diffs = 0, ok = 0, onlyJt = 0, onlyCal = 0;
+
+  CHAPTERS.forEach(function(ch) {
+    var chP = getPartidas(ch);
+    var card = makeEl('div', 'cmp-card');
+    var top = makeEl('div', 'cmp-top');
+    var tit = makeEl('div', 'cmp-top-tit'); tit.textContent = ch.titulo; top.appendChild(tit);
+    card.appendChild(top);
+
+    var hrow = makeEl('div', 'cmp-hrow');
+    hrow.innerHTML = '<span>Partida</span><span style="text-align:center">JT</span><span style="text-align:center">Calidad</span><span style="text-align:center">Dif</span>';
+    card.appendChild(hrow);
+
+    chP.forEach(function(p) {
+      var jv = DATA.jt[p.id], cv = DATA.cal[p.id];
+      var hasJt = hasVal('jt', p.id), hasCal = hasVal('cal', p.id);
+      if (!hasJt && !hasCal) return;
+
+      var row = makeEl('div', 'cmp-row');
+      var pn = makeEl('div', 'cmp-pn');
+      var pnum = makeEl('span', 'cmp-pnum'); pnum.textContent = '#' + p.id; pn.appendChild(pnum);
+      pn.appendChild(document.createTextNode(p.nombre));
+      row.appendChild(pn);
+
+      function fmtVal(v, tipo) {
+        if (v === undefined || v === null) return '—';
+        if (tipo === 'viv') return Array.isArray(v) ? v.length + ' viv' : '—';
+        return v + '%';
+      }
+      function eqVal(jv, cv, tipo) {
+        if (!hasJt || !hasCal) return false;
+        if (tipo === 'viv') {
+          var ja = Array.isArray(jv) ? jv.slice().sort() : [];
+          var ca = Array.isArray(cv) ? cv.slice().sort() : [];
+          return ja.length === ca.length && ja.every(function(v,i){ return v === ca[i]; });
+        }
+        return jv === cv;
+      }
+
+      var eq = eqVal(jv, cv, p.tipo);
+      if (hasJt && hasCal) { if (eq) ok++; else diffs++; }
+      else if (hasJt && !hasCal) onlyJt++;
+      else if (!hasJt && hasCal) onlyCal++;
+
+      var jtCell = makeEl('div', 'cmp-val' + (!hasJt ? ' diff' : ''));
+      jtCell.textContent = fmtVal(jv, p.tipo);
+      row.appendChild(jtCell);
+
+      var calCell = makeEl('div', 'cmp-val' + (!hasCal ? ' diff' : ''));
+      calCell.textContent = fmtVal(cv, p.tipo);
+      row.appendChild(calCell);
+
+      var difCell = makeEl('div', '');
+      difCell.style.textAlign = 'center';
+      if (!hasJt || !hasCal) {
+        var badge = makeEl('span', 'diff-badge');
+        badge.textContent = !hasJt ? 'Solo Cal' : 'Solo JT';
+        difCell.appendChild(badge);
+      } else if (eq) {
+        var badge = makeEl('span', 'ok-badge');
+        badge.textContent = '✓';
+        difCell.appendChild(badge);
+      } else {
+        var badge = makeEl('span', 'diff-badge');
+        badge.textContent = '≠';
+        difCell.appendChild(badge);
+        if (p.tipo === 'viv') {
+          var ja2 = Array.isArray(jv) ? jv : [];
+          var ca2 = Array.isArray(cv) ? cv : [];
+          var jtOnly = ja2.filter(function(v){ return ca2.indexOf(v) < 0; });
+          var calOnly = ca2.filter(function(v){ return ja2.indexOf(v) < 0; });
+          if (jtOnly.length) {
+            var d = makeEl('div', 'lote-diff');
+            d.innerHTML = '<span class="jt-only">JT+: ' + jtOnly.join(', ') + '</span>';
+            difCell.appendChild(d);
+          }
+          if (calOnly.length) {
+            var d = makeEl('div', 'lote-diff');
+            d.innerHTML = '<span class="cal-only">Cal+: ' + calOnly.join(', ') + '</span>';
+            difCell.appendChild(d);
+          }
+        }
+      }
+      row.appendChild(difCell);
+      card.appendChild(row);
+    });
+
+    con.appendChild(card);
+  });
+
+  // Resumen
+  var sum = makeEl('div', 'cmp-sum');
+  [
+    { n: ok,      lbl: 'Coinciden',   col: '#1a9b5a' },
+    { n: diffs,   lbl: 'Difieren',    col: '#cc4422' },
+    { n: onlyJt,  lbl: 'Solo JT',     col: '#886611' },
+    { n: onlyCal, lbl: 'Solo Calidad',col: '#1a5aaa' }
+  ].forEach(function(it) {
+    var si = makeEl('div', 'cmp-sum-item');
+    var sn = makeEl('div', 'cmp-sum-n'); sn.textContent = it.n; sn.style.color = it.col;
+    var sl = makeEl('div', 'cmp-sum-lbl'); sl.textContent = it.lbl;
+    si.appendChild(sn); si.appendChild(sl);
+    sum.appendChild(si);
+  });
+  con.appendChild(sum);
+}
+</script>
+</body>
+</html>
