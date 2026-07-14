@@ -829,13 +829,8 @@ function doSave() {
   st.textContent = 'Guardando...'; st.style.color = '#8899bb';
   fetch(SCRIPT_URL, {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({
-      action: 'saveAuditData',
-      semana: CURRENT_SEMANA,
-      rol: ROLE,
-      datos: DATA[ROLE]
-    })
+    headers: {'Content-Type': 'text/plain'},
+    body: JSON.stringify({action: 'saveAuditData', semana: CURRENT_SEMANA, rol: ROLE, datos: DATA[ROLE]})
   })
     .then(function(r){ return r.json(); })
     .then(function(d){
