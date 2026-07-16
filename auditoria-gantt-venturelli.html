@@ -861,30 +861,18 @@ function showCompare() {
 
   var diffs = 0, ok = 0, onlyJt = 0, onlyCal = 0;
   var TOTAL_LOTES = Object.keys(MANZANAS).reduce(function(s,mz){ return s + Object.keys(MANZANAS[mz]).length; }, 0);
-  var jtTotal = 0, calTotal = 0;
+  var TOTAL_INC = allP.reduce(function(s,p){ return s + (p.inc || 0); }, 0);
+  var jtRaw = 0, calRaw = 0;
 
-  function calcObraP(v, tipo, inc) {
+  function calcObraRaw(v, tipo, inc) {
     if (v === undefined || v === null) return null;
     if (tipo === 'viv') {
       if (!Array.isArray(v)) return null;
-      return (v.length / TOTAL_LOTES) * inc * 100;
+      return (v.length / TOTAL_LOTES) * inc;
     }
     var n = parseFloat(v);
     if (isNaN(n)) return null;
-    return (n / 100) * inc * 100;
-  }
-  function fmtObraP(p) {
-    if (p === null) return '—';
-    return p.toFixed(2) + '%';
-  }
-  function eqVal(jv, cv, tipo) {
-    if (!hasVal('jt', 0) && !hasVal('cal', 0)) return false; // placeholder, evaluated per partida
-    if (tipo === 'viv') {
-      var ja = Array.isArray(jv) ? jv.slice().sort() : [];
-      var ca = Array.isArray(cv) ? cv.slice().sort() : [];
-      return ja.length === ca.length && ja.every(function(v,i){ return v === ca[i]; });
-    }
-    return jv === cv;
+    return (n / 100) * inc;
   }
 
   CHAPTERS.forEach(function(ch) {
@@ -903,10 +891,10 @@ function showCompare() {
       var hasJt = hasVal('jt', p.id), hasCal = hasVal('cal', p.id);
       if (!hasJt && !hasCal) return;
 
-      var jtP = hasJt ? calcObraP(jv, p.tipo, p.inc) : null;
-      var calP = hasCal ? calcObraP(cv, p.tipo, p.inc) : null;
-      if (jtP !== null) jtTotal += jtP;
-      if (calP !== null) calTotal += calP;
+      var jtP = hasJt ? calcObraRaw(jv, p.tipo, p.inc) : null;
+      var calP = hasCal ? calcObraRaw(cv, p.tipo, p.inc) : null;
+      if (jtP !== null) jtRaw += jtP;
+      if (calP !== null) calRaw += calP;
 
       var row = makeEl('div', 'cmp-row');
       var pn = makeEl('div', 'cmp-pn');
@@ -992,8 +980,8 @@ function showCompare() {
   var avRow = makeEl('div', '');
   avRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px';
   [
-    { lbl: '👷 Jefe de Terreno', val: jtTotal, col: '#7fffb0' },
-    { lbl: '📋 Calidad',         val: calTotal, col: '#7bc8ff' }
+    { lbl: '👷 Jefe de Terreno', val: TOTAL_INC > 0 ? (jtRaw / TOTAL_INC * 100) : 0, col: '#7fffb0' },
+    { lbl: '📋 Calidad',         val: TOTAL_INC > 0 ? (calRaw / TOTAL_INC * 100) : 0, col: '#7bc8ff' }
   ].forEach(function(it) {
     var cell = makeEl('div', '');
     cell.style.cssText = 'background:rgba(255,255,255,.06);border-radius:10px;padding:14px;text-align:center';
