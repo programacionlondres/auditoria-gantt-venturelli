@@ -861,18 +861,30 @@ function showCompare() {
 
   var diffs = 0, ok = 0, onlyJt = 0, onlyCal = 0;
   var TOTAL_LOTES = Object.keys(MANZANAS).reduce(function(s,mz){ return s + Object.keys(MANZANAS[mz]).length; }, 0);
-  var TOTAL_INC = allP.reduce(function(s,p){ return s + (p.inc || 0); }, 0);
+  // Peso de cada capítulo en el % de obra total
+  var CH_PESO = { OP: 4.283, VIV: 71.811, URB: 19.440, EQ: 4.467 };
+  // Suma de inc por capítulo (para normalizar las partidas dentro del capítulo)
+  var CH_INC_SUM = {};
+  CHAPTERS.forEach(function(ch) {
+    var ps = getPartidas(ch);
+    CH_INC_SUM[ch.id] = ps.reduce(function(s,p){ return s + (p.inc||0); }, 0);
+  });
   var jtRaw = 0, calRaw = 0;
 
-  function calcObraRaw(v, tipo, inc) {
+  function calcObraRaw(v, tipo, inc, chId) {
     if (v === undefined || v === null) return null;
+    var chSum = CH_INC_SUM[chId] || 1;
+    var chPeso = (CH_PESO[chId] || 0) / 100;
+    var doneFrac;
     if (tipo === 'viv') {
       if (!Array.isArray(v)) return null;
-      return (v.length / TOTAL_LOTES) * inc;
+      doneFrac = TOTAL_LOTES > 0 ? v.length / TOTAL_LOTES : 0;
+    } else {
+      var n = parseFloat(v);
+      if (isNaN(n)) return null;
+      doneFrac = n / 100;
     }
-    var n = parseFloat(v);
-    if (isNaN(n)) return null;
-    return (n / 100) * inc;
+    return doneFrac * (inc / chSum) * chPeso * 100;
   }
 
   CHAPTERS.forEach(function(ch) {
@@ -891,8 +903,8 @@ function showCompare() {
       var hasJt = hasVal('jt', p.id), hasCal = hasVal('cal', p.id);
       if (!hasJt && !hasCal) return;
 
-      var jtP = hasJt ? calcObraRaw(jv, p.tipo, p.inc) : null;
-      var calP = hasCal ? calcObraRaw(cv, p.tipo, p.inc) : null;
+      var jtP = hasJt ? calcObraRaw(jv, p.tipo, p.inc, ch.id) : null;
+      var calP = hasCal ? calcObraRaw(cv, p.tipo, p.inc, ch.id) : null;
       if (jtP !== null) jtRaw += jtP;
       if (calP !== null) calRaw += calP;
 
@@ -980,8 +992,8 @@ function showCompare() {
   var avRow = makeEl('div', '');
   avRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px';
   [
-    { lbl: '👷 Jefe de Terreno', val: TOTAL_INC > 0 ? (jtRaw / TOTAL_INC * 100) : 0, col: '#7fffb0' },
-    { lbl: '📋 Calidad',         val: TOTAL_INC > 0 ? (calRaw / TOTAL_INC * 100) : 0, col: '#7bc8ff' }
+    { lbl: '👷 Jefe de Terreno', val: jtRaw, col: '#7fffb0' },
+    { lbl: '📋 Calidad',         val: calRaw, col: '#7bc8ff' }
   ].forEach(function(it) {
     var cell = makeEl('div', '');
     cell.style.cssText = 'background:rgba(255,255,255,.06);border-radius:10px;padding:14px;text-align:center';
