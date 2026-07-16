@@ -860,6 +860,32 @@ function showCompare() {
   CHAPTERS.forEach(function(ch) { allP = allP.concat(getPartidas(ch)); });
 
   var diffs = 0, ok = 0, onlyJt = 0, onlyCal = 0;
+  var TOTAL_LOTES = Object.keys(MANZANAS).reduce(function(s,mz){ return s + Object.keys(MANZANAS[mz]).length; }, 0);
+  var jtTotal = 0, calTotal = 0;
+
+  function calcObraP(v, tipo, inc) {
+    if (v === undefined || v === null) return null;
+    if (tipo === 'viv') {
+      if (!Array.isArray(v)) return null;
+      return (v.length / TOTAL_LOTES) * inc * 100;
+    }
+    var n = parseFloat(v);
+    if (isNaN(n)) return null;
+    return (n / 100) * inc * 100;
+  }
+  function fmtObraP(p) {
+    if (p === null) return '—';
+    return p.toFixed(2) + '%';
+  }
+  function eqVal(jv, cv, tipo) {
+    if (!hasVal('jt', 0) && !hasVal('cal', 0)) return false; // placeholder, evaluated per partida
+    if (tipo === 'viv') {
+      var ja = Array.isArray(jv) ? jv.slice().sort() : [];
+      var ca = Array.isArray(cv) ? cv.slice().sort() : [];
+      return ja.length === ca.length && ja.every(function(v,i){ return v === ca[i]; });
+    }
+    return jv === cv;
+  }
 
   CHAPTERS.forEach(function(ch) {
     var chP = getPartidas(ch);
@@ -877,45 +903,50 @@ function showCompare() {
       var hasJt = hasVal('jt', p.id), hasCal = hasVal('cal', p.id);
       if (!hasJt && !hasCal) return;
 
+      var jtP = hasJt ? calcObraP(jv, p.tipo, p.inc) : null;
+      var calP = hasCal ? calcObraP(cv, p.tipo, p.inc) : null;
+      if (jtP !== null) jtTotal += jtP;
+      if (calP !== null) calTotal += calP;
+
       var row = makeEl('div', 'cmp-row');
       var pn = makeEl('div', 'cmp-pn');
       var pnum = makeEl('span', 'cmp-pnum'); pnum.textContent = '#' + p.id; pn.appendChild(pnum);
       pn.appendChild(document.createTextNode(p.nombre));
       row.appendChild(pn);
 
-      function fmtVal(v, tipo) {
-        if (v === undefined || v === null) return '—';
-        if (tipo === 'viv') return Array.isArray(v) ? v.length + ' viv' : '—';
-        return v + '%';
-      }
-      function eqVal(jv, cv, tipo) {
-        if (!hasJt || !hasCal) return false;
-        if (tipo === 'viv') {
+      var hasJtL = hasJt, hasCalL = hasCal;
+      var eq = (hasJtL && hasCalL) ? (function(){
+        if (p.tipo === 'viv') {
           var ja = Array.isArray(jv) ? jv.slice().sort() : [];
           var ca = Array.isArray(cv) ? cv.slice().sort() : [];
           return ja.length === ca.length && ja.every(function(v,i){ return v === ca[i]; });
         }
         return jv === cv;
+      })() : false;
+
+      if (hasJtL && hasCalL) { if (eq) ok++; else diffs++; }
+      else if (hasJtL && !hasCalL) onlyJt++;
+      else if (!hasJtL && hasCalL) onlyCal++;
+
+      function fmtVal(v, tipo) {
+        if (v === undefined || v === null) return '—';
+        if (tipo === 'viv') return Array.isArray(v) ? v.length + ' viv' : '—';
+        return v + '%';
       }
 
-      var eq = eqVal(jv, cv, p.tipo);
-      if (hasJt && hasCal) { if (eq) ok++; else diffs++; }
-      else if (hasJt && !hasCal) onlyJt++;
-      else if (!hasJt && hasCal) onlyCal++;
-
-      var jtCell = makeEl('div', 'cmp-val' + (!hasJt ? ' diff' : ''));
+      var jtCell = makeEl('div', 'cmp-val' + (!hasJtL ? ' diff' : ''));
       jtCell.textContent = fmtVal(jv, p.tipo);
       row.appendChild(jtCell);
 
-      var calCell = makeEl('div', 'cmp-val' + (!hasCal ? ' diff' : ''));
+      var calCell = makeEl('div', 'cmp-val' + (!hasCalL ? ' diff' : ''));
       calCell.textContent = fmtVal(cv, p.tipo);
       row.appendChild(calCell);
 
       var difCell = makeEl('div', '');
       difCell.style.textAlign = 'center';
-      if (!hasJt || !hasCal) {
+      if (!hasJtL || !hasCalL) {
         var badge = makeEl('span', 'diff-badge');
-        badge.textContent = !hasJt ? 'Solo Cal' : 'Solo JT';
+        badge.textContent = !hasJtL ? 'Solo Cal' : 'Solo JT';
         difCell.appendChild(badge);
       } else if (eq) {
         var badge = makeEl('span', 'ok-badge');
@@ -949,7 +980,34 @@ function showCompare() {
     con.appendChild(card);
   });
 
-  // Resumen
+  // Tarjeta de avance total de obra
+  var avCard = makeEl('div', 'cmp-card');
+  avCard.style.cssText = 'background:#0d1b38;border:2px solid #22dd80;margin-top:8px';
+  var avTitle = makeEl('div', 'cmp-top');
+  var avTit = makeEl('div', 'cmp-top-tit');
+  avTit.textContent = '% AVANCE GENERAL DE OBRA (según datos ingresados)';
+  avTit.style.color = '#22dd80';
+  avTitle.appendChild(avTit);
+  avCard.appendChild(avTitle);
+  var avRow = makeEl('div', '');
+  avRow.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px';
+  [
+    { lbl: '👷 Jefe de Terreno', val: jtTotal, col: '#7fffb0' },
+    { lbl: '📋 Calidad',         val: calTotal, col: '#7bc8ff' }
+  ].forEach(function(it) {
+    var cell = makeEl('div', '');
+    cell.style.cssText = 'background:rgba(255,255,255,.06);border-radius:10px;padding:14px;text-align:center';
+    var lbl = makeEl('div', ''); lbl.textContent = it.lbl;
+    lbl.style.cssText = 'font-size:12px;color:#8899bb;margin-bottom:6px';
+    var val = makeEl('div', ''); val.textContent = it.val.toFixed(2) + '%';
+    val.style.cssText = 'font-size:28px;font-weight:800;color:' + it.col;
+    cell.appendChild(lbl); cell.appendChild(val);
+    avRow.appendChild(cell);
+  });
+  avCard.appendChild(avRow);
+  con.appendChild(avCard);
+
+  // Resumen diferencias
   var sum = makeEl('div', 'cmp-sum');
   [
     { n: ok,      lbl: 'Coinciden',   col: '#1a9b5a' },
